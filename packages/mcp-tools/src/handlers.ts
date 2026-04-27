@@ -70,6 +70,64 @@ function playlistEntries(dump: unknown): unknown[] {
   return Array.isArray(o.entries) ? o.entries : [];
 }
 
+/**
+ * yt-dlp often emits one JSON line per item (`_type`: `video` or `url`) with
+ * `playlist_id` set, instead of a single `_type`: `playlist` root with `entries`.
+ * We synthesize a playlist-shaped root so `mapPlaylistRootToResource` and
+ * `playlistEntries` behave consistently.
+ */
+function syntheticPlaylistFromFlatLines(
+  parts: unknown[],
+): Record<string, unknown> | null {
+  const lines: Record<string, unknown>[] = [];
+  for (const p of parts) {
+    if (!p || typeof p !== "object") {
+      continue;
+    }
+    const o = p as Record<string, unknown>;
+    const t = o._type;
+    if (t !== "url" && t !== "video") {
+      continue;
+    }
+    const pid = o.playlist_id;
+    if (typeof pid !== "string" || pid.length === 0) {
+      continue;
+    }
+    lines.push(o);
+  }
+  if (lines.length === 0) {
+    return null;
+  }
+  const playlistId = lines[0]!.playlist_id as string;
+  for (const o of lines) {
+    if (o.playlist_id !== playlistId) {
+      return null;
+    }
+  }
+  const first = lines[0]!;
+  const title =
+    typeof first.playlist_title === "string" && first.playlist_title.length
+      ? first.playlist_title
+      : "Playlist";
+  const webpage =
+    typeof first.playlist_webpage_url === "string" &&
+    first.playlist_webpage_url.length
+      ? first.playlist_webpage_url
+      : `https://www.youtube.com/playlist?list=${playlistId}`;
+  const uploader =
+    typeof first.playlist_uploader === "string"
+      ? first.playlist_uploader
+      : undefined;
+  return {
+    _type: "playlist",
+    id: playlistId,
+    title,
+    webpage_url: webpage,
+    uploader,
+    entries: lines,
+  };
+}
+
 function findPlaylistObject(parts: unknown[]): unknown {
   for (const p of parts) {
     if (!p || typeof p !== "object") {
@@ -80,7 +138,76 @@ function findPlaylistObject(parts: unknown[]): unknown {
       return p;
     }
   }
-  return parts[0] ?? null;
+  return syntheticPlaylistFromFlatLines(parts);
+}
+
+/**
+ * Channel `/videos` tab: NDJSON is often one `video` / `url` line per upload, each with
+ * the same `channel_id`, instead of a root object with `entries`.
+ */
+function syntheticChannelFromFlatLines(
+  parts: unknown[],
+): Record<string, unknown> | null {
+  const lines: Record<string, unknown>[] = [];
+  for (const p of parts) {
+    if (!p || typeof p !== "object") {
+      continue;
+    }
+    const o = p as Record<string, unknown>;
+    const t = o._type;
+    if (t !== "url" && t !== "video") {
+      continue;
+    }
+    const ch = o.channel_id;
+    if (typeof ch !== "string" || ch.length === 0) {
+      continue;
+    }
+    lines.push(o);
+  }
+  if (lines.length === 0) {
+    return null;
+  }
+  const channelId = lines[0]!.channel_id as string;
+  for (const o of lines) {
+    if (o.channel_id !== channelId) {
+      return null;
+    }
+  }
+  const first = lines[0]!;
+  const title =
+    typeof first.channel === "string" && first.channel.length
+      ? first.channel
+      : typeof first.uploader === "string" && first.uploader.length
+        ? first.uploader
+        : "YouTube channel";
+  const uploader =
+    typeof first.uploader === "string" ? first.uploader : undefined;
+  return {
+    channel_id: channelId,
+    title,
+    uploader,
+    entries: lines,
+  };
+}
+
+/** Prefer nested yt-dlp channel/tab dump; otherwise merge flat per-video lines. */
+function findChannelRoot(parts: unknown[]): unknown {
+  for (const p of parts) {
+    if (!p || typeof p !== "object") {
+      continue;
+    }
+    const o = p as Record<string, unknown> & { entries?: unknown };
+    const ent = o.entries;
+    if (
+      typeof o.channel_id === "string" &&
+      o.channel_id.length > 0 &&
+      Array.isArray(ent) &&
+      ent.length > 0
+    ) {
+      return p;
+    }
+  }
+  return syntheticChannelFromFlatLines(parts);
 }
 
 export async function handleExtractContent(
@@ -483,9 +610,9 @@ export async function handleExtractChannelLatest(
     const parts = await ctx.extractor.getMetadataDumpLines(url, {
       playlistEnd: maxItems,
     });
-    const root = parts[0] ?? null;
+    const root = findChannelRoot(parts);
     if (!root) {
-      return toolErr("PARSE_FAILED", "Empty yt-dlp response", false);
+      return toolErr("PARSE_FAILED", "Could not parse channel from yt-dlp", false);
     }
     const t = nowIso();
     const { resource } = mapChannelRootToResource(

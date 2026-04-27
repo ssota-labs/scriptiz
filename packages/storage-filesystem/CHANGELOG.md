@@ -1,5 +1,12 @@
 # @scriptiz/storage-filesystem
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [484d7da]
+  - @scriptiz/core@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
