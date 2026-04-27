@@ -426,7 +426,7 @@ export async function handleExtractPlaylist(
       return toolErr("PARSE_FAILED", "Could not parse playlist from yt-dlp", false);
     }
     const t = nowIso();
-    const { resource, playlistId } = mapPlaylistRootToResource(plDump, t);
+    const { resource } = mapPlaylistRootToResource(plDump, t);
     await ctx.storage.putResource(resource);
     const rawEntries = playlistEntries(plDump);
     const items: Resource[] = [];
@@ -626,7 +626,6 @@ export async function handleGetListContents(
 
 export async function handleListLists(
   ctx: ScriptizMcpContext,
-  _raw: unknown,
 ): Promise<ToolResult> {
   const ids = await ctx.storage.listIds();
   const lists: { id: string; name: string; updatedAt: string }[] = [];
@@ -706,7 +705,7 @@ export async function runScriptizTool(
       r = await handleGetListContents(ctx, args);
       break;
     case "list_lists":
-      r = await handleListLists(ctx, args);
+      r = await handleListLists(ctx);
       break;
     case "get_video_transcript_view":
       r = await handleGetVideoTranscriptView(ctx, args);

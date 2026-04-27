@@ -11,7 +11,7 @@ describe("mcp tool handlers (filesystem)", () => {
     const dir = await mkdtemp(path.join(os.tmpdir(), "scriptiz-mcp-"));
     try {
       const ctx = createScriptizMcpContext({ dataDir: dir, defaultLanguage: "en" });
-      const empty = await handleListLists(ctx, {});
+      const empty = await handleListLists(ctx);
       expect("lists" in empty && (empty as { lists: unknown[] }).lists).toEqual([]);
 
       const list = createUserList({
@@ -22,7 +22,7 @@ describe("mcp tool handlers (filesystem)", () => {
       await mkdir(path.join(dir, "lists"), { recursive: true });
       await ctx.storage.putList(list);
 
-      const listed = await handleListLists(ctx, {});
+      const listed = await handleListLists(ctx);
       expect(
         (listed as { lists: { id: string; name: string }[] }).lists,
       ).toHaveLength(1);
