@@ -143,24 +143,6 @@ export function registerScriptizTools(
     SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg("list_lists", "List all saved lists (id, name, updatedAt).", z.object({}), SCRIPTIZ_MCP_APP_TOOL_META);
-  reg(
-    "get_video_transcript_view",
-    "MCP UI: video + timed transcript payload (YouTube embed + segments). Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",
-    schemas.getVideoTranscriptViewInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
-  );
-  reg(
-    "get_list_view",
-    "MCP UI: list + resources and transcript language tags. Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",
-    schemas.getListViewInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
-  );
-  reg(
-    "get_job_status_view",
-    "MCP UI: extraction job + optional resource metadata. Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",
-    schemas.jobIdInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
-  );
 }
 
 /**

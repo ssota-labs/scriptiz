@@ -117,7 +117,7 @@ See [docs/MCP_RELEASE.md](docs/MCP_RELEASE.md) for publishing the image to GHCR 
 - Lets agents read long transcripts through cursors and time ranges.
 - Imports playlist metadata and channel uploads.
 - Saves resources into user-defined local lists.
-- Returns MCP UI payloads for video transcript, list, and job status views.
+- Returns structured data for transcripts, lists, and jobs; MCP Apps hosts can render the shared `ui://scriptiz/app` HTML using ordinary tool results (`get_timed_transcript`, `get_list_contents`, `get_extraction_status`, etc.).
 - Supports optional STT fallback through OpenAI or xAI when captions are unavailable.
 
 ## Current Status
@@ -289,11 +289,7 @@ Lists:
 - `add_playlist_to_list`
 - `get_list_contents`
 
-MCP UI payloads:
-
-- `get_video_transcript_view`
-- `get_list_view`
-- `get_job_status_view`
+**MCP Apps:** every tool includes `_meta.ui.resourceUri` → `ui://scriptiz/app`. Hosts that support MCP Apps load that HTML in an iframe; use the **data tools above** (not separate “view” tools) for transcript, list, and job JSON.
 
 Typical flow:
 
@@ -324,7 +320,7 @@ pnpm docker:build:mcp
 docker compose up --build
 curl http://127.0.0.1:8080/healthz
 pnpm test:docker-compose-smoke   # optional: split compose /healthz only
-pnpm test:docker-smoke          # all-in-one image + MCP stdio + extraction/tool flow
+pnpm test:docker-smoke          # all-in-one image + MCP stdio: real extraction, transcript, list tools (no separate view tools)
 pnpm test:docker-mcp-smoke      # quick: build image + sanity checks (no full MCP protocol)
 ```
 
@@ -372,7 +368,7 @@ Test tiers:
 - Unit tests are fast and deterministic. They cover core IDs, cursors, transcript slicing, list logic, URL validation, VTT parsing, schemas, STT segment normalization, and storage safety helpers.
 - Integration tests use temporary directories and fixtures to verify local storage and queue behavior without external APIs.
 - Adapter/e2e tests may require `yt-dlp`, `ffmpeg`, network access, Docker, and optional STT keys.
-- `pnpm test:docker-smoke` builds the all-in-one image (when using `scriptiz-mcp:local`), runs the same path as `npx @scriptiz/mcp` against a **throwaway** Docker volume, and exercises MCP stdio (`initialize`, `tools/list`, `tools/call`) through a real YouTube extraction job, transcript reads, list tools, and MCP UI payload tools. Requires Docker, network access, and `yt-dlp` inside the image.
+- `pnpm test:docker-smoke` builds the all-in-one image (when using `scriptiz-mcp:local`), runs the same path as `npx @scriptiz/mcp` against a **throwaway** Docker volume, and exercises MCP stdio (`initialize`, `tools/list`, `tools/call`) through a real YouTube extraction job, transcript reads, and list tools. Requires Docker, network access, and `yt-dlp` inside the image.
 - `pnpm test:docker-compose-smoke` is optional and only checks split-compose `mcp-server` `/healthz`.
 
 Before opening a PR:
@@ -431,7 +427,7 @@ Near term:
 
 Open-source MCP:
 
-- Better MCP UI payloads for video transcript, lists, and job status.
+- **MCP Apps HTML:** shared `ui://scriptiz/app` + iframe; data comes from standard tools (`get_timed_transcript`, `get_list_contents`, etc.).
 - Better local scripts for running MCP server and worker together.
 - More source adapters: Vimeo, Loom, podcasts, and direct audio/video files.
 

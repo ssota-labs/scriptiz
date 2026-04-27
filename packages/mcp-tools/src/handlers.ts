@@ -46,11 +46,6 @@ import {
   listAvailableLanguagesInput,
 } from "./schemas.js";
 import {
-  handleGetJobStatusView,
-  handleGetListView,
-  handleGetVideoTranscriptView,
-} from "./ui-handlers.js";
-import {
   ensureChannelVideosUrl,
   isStrictYouTubeChannelOrTabUrl,
   isStrictYouTubePlaylistUrl,
@@ -734,15 +729,6 @@ export async function runScriptizTool(
       break;
     case "list_lists":
       r = await handleListLists(ctx);
-      break;
-    case "get_video_transcript_view":
-      r = await handleGetVideoTranscriptView(ctx, args);
-      break;
-    case "get_list_view":
-      r = await handleGetListView(ctx, args);
-      break;
-    case "get_job_status_view":
-      r = await handleGetJobStatusView(ctx, args);
       break;
     default:
       r = toolErr("UNKNOWN_TOOL", `Unknown tool: ${name}`, false);

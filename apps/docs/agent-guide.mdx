@@ -17,7 +17,7 @@ These enqueue **async extraction**. The response includes a `jobId`; poll **`get
 - **Timed segments:** `get_timed_transcript`, `get_transcript_chunk`, `get_transcript_range`
 - **Bulk metadata:** `extract_playlist`, `extract_channel_latest` (saves metadata + item resources on the MCP side; **does not** create per-video `extract_content` jobs — run `extract_content` later for captions)
 - **Lists:** `create_list`, `add_resource_to_list`, `add_playlist_to_list`, `get_list_contents`, `list_lists`
-- **MCP UI payloads:** `get_video_transcript_view`, `get_list_view`, `get_job_status_view`
+- **MCP Apps:** all tools declare `_meta.ui.resourceUri` for `ui://scriptiz/app`; use the data tools above for payloads (no separate view tools).
 
 ## Recommended flow: video → read transcript
 

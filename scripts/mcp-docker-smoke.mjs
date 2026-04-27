@@ -18,9 +18,6 @@ const REQUIRED_TOOLS = [
   "create_list",
   "add_resource_to_list",
   "get_list_contents",
-  "get_video_transcript_view",
-  "get_list_view",
-  "get_job_status_view",
 ];
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -234,40 +231,6 @@ async function main() {
     );
     if (!contents.list || !Array.isArray(contents.items)) {
       throw new Error(`get_list_contents: ${JSON.stringify(contents)}`);
-    }
-
-    const { parsed: vtv } = await callToolJson(
-      client,
-      "get_video_transcript_view",
-      { resourceId, language: lang, limit: 20 },
-      "get_video_transcript_view",
-    );
-    if (vtv.type !== "video_transcript_view") {
-      throw new Error(
-        `get_video_transcript_view type: ${JSON.stringify(vtv?.type)}`,
-      );
-    }
-
-    const { parsed: lv } = await callToolJson(
-      client,
-      "get_list_view",
-      { listId },
-      "get_list_view",
-    );
-    if (lv.type !== "list_view") {
-      throw new Error(`get_list_view type: ${JSON.stringify(lv?.type)}`);
-    }
-
-    const { parsed: jv } = await callToolJson(
-      client,
-      "get_job_status_view",
-      { jobId },
-      "get_job_status_view",
-    );
-    if (jv.type !== "job_status_view") {
-      throw new Error(
-        `get_job_status_view type: ${JSON.stringify(jv?.type)}`,
-      );
     }
 
     logErr("mcp-docker-smoke: all checks passed");

@@ -1,46 +1,28 @@
 ---
 title: MCP UI
-description: get_video_transcript_view, get_list_view, get_job_status_view — JSON tools + MCP Apps (ui://) HTML
+description: MCP Apps (ui://), shared HTML, and ordinary tool JSON — no separate view tools
 ---
 
 Scriptiz exposes **two related layers**:
 
-1. **Tool results (JSON)** — rich layouts are built with `@scriptiz/mcp-tools` (subpath `@scriptiz/mcp-tools/ui`) and returned from the view-oriented tools below. Other tools return domain JSON; all tools include `_meta.ui.resourceUri` for the same `ui://scriptiz/app` HTML entry.
-2. **[MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview)** — tools declare `_meta.ui.resourceUri` → `ui://scriptiz/app`. The MCP server answers `resources/read` with **`text/html`** (placeholder or the Vite build under `packages/mcp-tools/web/dist` when `SCRIPTIZ_MCP_UI_DIST` is set). **ChatGPT** and other hosts render that HTML in a **sandboxed iframe** and use the standard `ui/*` bridge ([OpenAI notes](https://developers.openai.com/apps-sdk/mcp-apps-in-chatgpt)).
+1. **Tool results (JSON)** — domain tools (`get_timed_transcript`, `get_list_contents`, `get_extraction_status`, `get_content`, etc.) return plain JSON. Layout helpers (`buildVideoTranscriptView`, …) live in `@scriptiz/mcp-tools/ui` for demos, tests, or hosts that compose views client-side; they are **not** separate MCP tools.
+2. **[MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview)** — **every** registered tool includes `_meta.ui.resourceUri` → `ui://scriptiz/app`. The MCP server answers `resources/read` with **`text/html`** (placeholder or the Vite build under `packages/mcp-tools/web/dist` when `SCRIPTIZ_MCP_UI_DIST` is set). **ChatGPT** and other hosts render that HTML in a **sandboxed iframe** and use the standard `ui/*` bridge ([OpenAI notes](https://developers.openai.com/apps-sdk/mcp-apps-in-chatgpt)).
 
 For **ChatGPT**, the same URI may also appear as `_meta["openai/outputTemplate"]` (compatibility alias).
 
-## `get_video_transcript_view`
+## Typical data for a transcript UI
 
-**Video** resource + timed segments (and embed URL) payload.
+Use **`get_timed_transcript`** (and **`get_content`** for resource metadata) instead of a dedicated view tool. Pagination: **`nextCursor`** on the transcript response.
 
-**Input:** `resourceId`, `language?`, `cursor?`, `limit?` (default 500, max 2000)
+## Typical data for a list UI
 
-**Errors:** `NOT_FOUND`, `INVALID_RESOURCE` (not a video), `NO_TRANSCRIPT`, `INVALID_CURSOR`, `BUILD_UI_PAYLOAD` (build failure), `VALIDATION_ERROR`
+Use **`get_list_contents`** for list metadata, items, and resolved resources.
 
-## `get_list_view`
+## Typical data for job status
 
-List + each item’s **resource** and **transcript language** tags.
-
-**Input:** `{ "listId": string }`  
-**Errors:** `NOT_FOUND`
-
-## `get_job_status_view`
-
-**Input:** `{ "jobId": string }` (same `jobId` schema as other tools)
-
-**Success:** Job + optional resource metadata (payload from `buildJobStatusView` in `@scriptiz/mcp-tools/ui`)  
-**Errors:** `JOB_NOT_FOUND`, `VALIDATION_ERROR`
-
-## UI-only codes (summary)
-
-| Code | Description |
-|------|-------------|
-| `INVALID_RESOURCE` | Transcript view requires `type: video` |
-| `BUILD_UI_PAYLOAD` | Internal builder threw |
-| `NOT_FOUND` / `JOB_NOT_FOUND` | Resource or job missing |
+Use **`get_extraction_status`** with `{ "jobId": string }`.
 
 ## Local try-out
 
-- **JSON / layout:** `pnpm dev:ui` → Vite app in `packages/mcp-tools/web` (no full MCP host required).
+- **JSON / layout:** `pnpm dev:ui` → Vite app in `packages/mcp-tools/web` (no full MCP host required). Paste sample JSON built with `@scriptiz/mcp-tools/ui` or raw tool output.
 - **MCP Apps iframe:** use a host that implements MCP Apps; run `pnpm --filter @scriptiz/mcp-tools run build:web` and set `SCRIPTIZ_MCP_UI_DIST` to `packages/mcp-tools/web/dist`. Full `ui/*` integration is tracked as follow-up work.
