@@ -36,7 +36,7 @@ Optional STT (caption fallback):
 
 ## Environment
 
-Forwarded into the container: `DEFAULT_TRANSCRIPT_LANGUAGE`, `DEFAULT_LANGUAGE`, `STT_PROVIDER`, `OPENAI_API_KEY`, `XAI_API_KEY`, `WORKER_*`, `YTDLP_TIMEOUT_MS`, `STT_TIMEOUT_MS`, `STT_MAX_AUDIO_BYTES`.
+Forwarded into the container: `DEFAULT_TRANSCRIPT_LANGUAGE`, `DEFAULT_LANGUAGE`, `STT_PROVIDER`, `OPENAI_API_KEY`, `XAI_API_KEY`, `WORKER_*`, `YTDLP_TIMEOUT_MS`, `YTDLP_PROXY` (HTTP/HTTPS proxy URL for all `yt-dlp` requests; e.g. residential proxy), `STT_TIMEOUT_MS`, `STT_MAX_AUDIO_BYTES`.
 
 Launcher-only (not forwarded):
 

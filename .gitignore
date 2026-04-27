@@ -10,3 +10,6 @@ coverage
 
 # Local agent / IDE state
 .bkit/
+
+# pnpm pack at repo root (e.g. vendoring @scriptiz/mcp-tools for downstream repos)
+/scriptiz-mcp-tools-*.tgz

@@ -17,7 +17,7 @@ These variables control **how** the launcher invokes Docker. They are **not** pa
 | `SCRIPTIZ_DOCKER_PULL` | `missing` | `always`, `missing`, or `never` → passed to `docker run --pull` |
 
 The launcher forwards these into the container when set (same names as in the tables below):  
-`DEFAULT_TRANSCRIPT_LANGUAGE`, `DEFAULT_LANGUAGE`, `STT_PROVIDER`, `OPENAI_API_KEY`, `XAI_API_KEY`, `WORKER_POLL_INTERVAL_MS`, `WORKER_STALE_JOB_AFTER_MS`, `YTDLP_TIMEOUT_MS`, `STT_TIMEOUT_MS`, `STT_MAX_AUDIO_BYTES`.
+`DEFAULT_TRANSCRIPT_LANGUAGE`, `DEFAULT_LANGUAGE`, `STT_PROVIDER`, `OPENAI_API_KEY`, `XAI_API_KEY`, `WORKER_POLL_INTERVAL_MS`, `WORKER_STALE_JOB_AFTER_MS`, `YTDLP_TIMEOUT_MS`, `YTDLP_PROXY`, `STT_TIMEOUT_MS`, `STT_MAX_AUDIO_BYTES`.
 
 Inside the all-in-one container, `DATA_DIR` is always **`/app/data`**. The MCP process and worker share that directory.
 
@@ -41,11 +41,14 @@ In the **all-in-one** image, the worker runs in the same container and uses the 
 | `WORKER_POLL_INTERVAL_MS` | `2000` | Queue poll interval |
 | `WORKER_STALE_JOB_AFTER_MS` | `1800000` | Stale running job recovery (30 min) |
 | `YTDLP_TIMEOUT_MS` | `600000` | yt-dlp timeout |
+| `YTDLP_PROXY` | (unset) | If set, passed to every `yt-dlp` run as `--proxy <url>` (metadata, captions, and STT audio download). Use an HTTP(S) proxy URL from your provider. |
 | `STT_TIMEOUT_MS` | `300000` | STT API timeout |
 | `STT_MAX_AUDIO_BYTES` | `26214400` | Max audio size sent to STT |
-| `STT_PROVIDER` | empty | `openai` or `xai` for captionless fallback |
+| `STT_PROVIDER` | empty | `openai` or `xai` for captionless fallback (invalid values fail the job with `STT_PROVIDER_INVALID`) |
 | `OPENAI_API_KEY` | | OpenAI transcription |
 | `XAI_API_KEY` | | xAI transcription |
+
+If STT runs and fails, job `errorCode` / `errorMessage` from `get_extraction_status` may include `STT_HTTP_ERROR`, `STT_TIMEOUT`, `STT_FILE_TOO_LARGE`, `STT_API_KEY_MISSING`, or `STT_PROVIDER_INVALID` — see [Troubleshooting](/troubleshooting#stt-job-failures-get_extraction_status).
 
 ## Schema source of truth
 

@@ -1,4 +1,4 @@
-export { YtDlpExtractor } from "./ytdlp-extractor.js";
+export { YtDlpExtractor, ytDlpProxyArgsFromEnv } from "./ytdlp-extractor.js";
 export { YtDlpError, type YtDlpErrorCode } from "./ytdlp-error.js";
 export { parseDumpJsonLines } from "./parse-dump-json.js";
 export {

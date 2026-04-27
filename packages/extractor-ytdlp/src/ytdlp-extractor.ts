@@ -8,6 +8,16 @@ import { findVttFiles } from "./find-vtt.js";
 import { captionSourceFromTrack } from "./subtitle-lang.js";
 import { parseDumpJsonLines } from "./parse-dump-json.js";
 
+/**
+ * When `YTDLP_PROXY` is set (non-empty after trim), returns `['--proxy', url]` for yt-dlp.
+ * Use for residential / rotating proxies (e.g. ZenRows) with `@scriptiz/mcp` Docker env forwarding.
+ */
+export function ytDlpProxyArgsFromEnv(): string[] {
+  const raw = process.env.YTDLP_PROXY?.trim();
+  if (!raw) return [];
+  return ["--proxy", raw];
+}
+
 export class YtDlpExtractor implements ExtractorPort {
   constructor(
     private readonly options: { ytdlpPath?: string } = {},
@@ -28,7 +38,12 @@ export class YtDlpExtractor implements ExtractorPort {
     url: string,
     options?: { playlistEnd?: number },
   ): Promise<unknown[]> {
-    const before = ["--no-warnings", "--dump-json", "--skip-download"];
+    const before = [
+      ...ytDlpProxyArgsFromEnv(),
+      "--no-warnings",
+      "--dump-json",
+      "--skip-download",
+    ];
     if (options?.playlistEnd != null) {
       before.push("--playlist-end", String(options.playlistEnd));
     }
@@ -64,6 +79,7 @@ export class YtDlpExtractor implements ExtractorPort {
     const r = await runYtDlp(
       this.binary(),
       [
+        ...ytDlpProxyArgsFromEnv(),
         "-o",
         "%(id)s",
         "--skip-download",
@@ -118,6 +134,7 @@ export class YtDlpExtractor implements ExtractorPort {
     const r = await runYtDlp(
       this.binary(),
       [
+        ...ytDlpProxyArgsFromEnv(),
         "-o",
         options.fileName,
         "-f",

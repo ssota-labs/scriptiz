@@ -1,5 +1,12 @@
 # @scriptiz/mcp-tools
 
+## 0.1.1
+
+### Patch Changes
+
+- Export `createScriptizMcpServer` (and related factory/context helpers) for hosted MCP transports that reuse the same tool surface as `apps/mcp-server` without stdio.
+- The `0.1.0` npm tarball predates this API; consumers that need `createScriptizMcpServer` should use `^0.1.1`, or vendor a `pnpm pack` tarball until `0.1.1` is on the registry (see [MCP_RELEASE.md](../../docs/MCP_RELEASE.md)).
+
 ## 0.1.0
 
 ### Minor Changes

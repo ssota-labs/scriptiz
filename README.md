@@ -46,6 +46,25 @@ Optional STT fallback when captions are missing:
 }
 ```
 
+Optional HTTP proxy for all `yt-dlp` traffic (metadata, captions, STT audio download). The `@scriptiz/mcp` launcher forwards `YTDLP_PROXY` into the container:
+
+```json
+{
+  "mcpServers": {
+    "scriptiz": {
+      "command": "npx",
+      "args": ["-y", "@scriptiz/mcp"],
+      "env": {
+        "DEFAULT_TRANSCRIPT_LANGUAGE": "ko",
+        "YTDLP_PROXY": "http://USER:PASS@superproxy.zenrows.com:1337"
+      }
+    }
+  }
+}
+```
+
+Use the URL your proxy provider gives you (`yt-dlp --proxy` format). Geo or sticky options can be encoded in the password per your provider.
+
 ### Claude Code
 
 ```bash
@@ -89,14 +108,14 @@ Verified so far:
 - `pnpm -r run build`
 - `pnpm lint`
 - `pnpm test:unit`
-- Docker build and `/healthz` smoke check
-- Docker worker extraction flow against a YouTube test URL
+- `pnpm test:docker-smoke` (all-in-one image + MCP stdio + extraction/tool flow against a YouTube URL)
+- Optional `pnpm test:docker-compose-smoke` for split-compose `/healthz` only
 
 Known limits:
 
 - MCP transport is stdio. The recommended end-user path is `npx @scriptiz/mcp` (Docker all-in-one). The compose `mcp-server` service is mainly for health checks and dev smoke tests, not a remote HTTP MCP endpoint.
 - Local dev data defaults to `~/.scriptiz`; the npx/Docker path uses a named volume or `SCRIPTIZ_DATA_DIR`.
-- STT requires `OPENAI_API_KEY` or `XAI_API_KEY` when you enable STT.
+- STT requires `OPENAI_API_KEY` or `XAI_API_KEY` when you enable STT (with optional `STT_PROVIDER=openai|xai`). When captionless fallback runs, failures surface as job `errorCode` values such as `STT_API_KEY_MISSING`, `STT_PROVIDER_INVALID`, `STT_FILE_TOO_LARGE`, `STT_TIMEOUT`, and `STT_HTTP_ERROR` (inspect `get_extraction_status`).
 - Hosted cache, auth, billing, teams, cloud sync, and remote MCP are roadmap items.
 
 ## Documentation
@@ -164,7 +183,7 @@ Local storage layout:
 
 **End users (npx path):** Docker, Node.js 18+ for `npx`.
 
-**Contributors:** Node.js 22+, pnpm 9.15.0, and (for local extraction without Docker) `yt-dlp` and `ffmpeg`. Optional: `OPENAI_API_KEY` or `XAI_API_KEY` for STT fallback.
+**Contributors:** Node.js 22+ (see `.nvmrc`), pnpm 10.33.2 (see `package.json` `packageManager`), and (for local extraction without Docker) `yt-dlp` and `ffmpeg`. Optional: `OPENAI_API_KEY` or `XAI_API_KEY` for STT fallback.
 
 ## Install from source (contributors)
 
@@ -199,7 +218,7 @@ Build the repo, then point your MCP client at the built server. Replace `<script
 node <scriptiz-dir>/apps/mcp-server/dist/index.js
 ```
 
-Environment: `DATA_DIR=<data-dir>`, `DEFAULT_TRANSCRIPT_LANGUAGE=ko`.
+Environment: `DATA_DIR=<data-dir>`, `DEFAULT_TRANSCRIPT_LANGUAGE=ko`, optional `YTDLP_PROXY` (passed to `yt-dlp --proxy`).
 
 **Cursor** example:
 
@@ -285,8 +304,9 @@ pnpm docker:build:mcp
 ```bash
 docker compose up --build
 curl http://127.0.0.1:8080/healthz
-pnpm test:docker-smoke
-pnpm test:docker-mcp-smoke
+pnpm test:docker-compose-smoke   # optional: split compose /healthz only
+pnpm test:docker-smoke          # all-in-one image + MCP stdio + extraction/tool flow
+pnpm test:docker-mcp-smoke      # quick: build image + sanity checks (no full MCP protocol)
 ```
 
 Container environment (worker and all-in-one) examples:
@@ -297,6 +317,7 @@ DEFAULT_TRANSCRIPT_LANGUAGE=ko
 WORKER_POLL_INTERVAL_MS=2000
 WORKER_STALE_JOB_AFTER_MS=1800000
 YTDLP_TIMEOUT_MS=600000
+YTDLP_PROXY=
 STT_TIMEOUT_MS=300000
 STT_MAX_AUDIO_BYTES=26214400
 STT_PROVIDER=openai|xai
@@ -320,6 +341,7 @@ pnpm test:unit
 pnpm test:integration
 pnpm test:e2e
 pnpm test:docker-smoke
+pnpm test:docker-compose-smoke
 pnpm test:docker-mcp-smoke
 pnpm docker:build:mcp
 pnpm dev:ui
@@ -331,7 +353,8 @@ Test tiers:
 - Unit tests are fast and deterministic. They cover core IDs, cursors, transcript slicing, list logic, URL validation, VTT parsing, schemas, STT segment normalization, and storage safety helpers.
 - Integration tests use temporary directories and fixtures to verify local storage and queue behavior without external APIs.
 - Adapter/e2e tests may require `yt-dlp`, `ffmpeg`, network access, Docker, and optional STT keys.
-- Docker smoke checks that images build and the MCP health endpoint responds.
+- `pnpm test:docker-smoke` builds the all-in-one image (when using `scriptiz-mcp:local`), runs the same path as `npx @scriptiz/mcp` against a **throwaway** Docker volume, and exercises MCP stdio (`initialize`, `tools/list`, `tools/call`) through a real YouTube extraction job, transcript reads, list tools, and MCP UI payload tools. Requires Docker, network access, and `yt-dlp` inside the image.
+- `pnpm test:docker-compose-smoke` is optional and only checks split-compose `mcp-server` `/healthz`.
 
 Before opening a PR:
 
@@ -345,10 +368,12 @@ pnpm test:integration
 If your change touches extraction, Docker, or worker behavior:
 
 ```bash
-pnpm test:docker-smoke
+DOCKER_SMOKE_YOUTUBE_URL='https://www.youtube.com/watch?v=YOUR_VIDEO_ID' pnpm test:docker-smoke
 pnpm test:docker-mcp-smoke
 pnpm test:e2e
 ```
+
+Optional env for the full smoke: `DOCKER_SMOKE_JOB_TIMEOUT_MS` (default 300000), `SCRIPTIZ_DOCKER_IMAGE` (default `scriptiz-mcp:local`), `SCRIPTIZ_DOCKER_VOLUME` (if unset, a per-run `scriptiz-smoke-<pid>` volume is created and removed). If you set `SCRIPTIZ_DOCKER_VOLUME` yourself, the smoke script will **not** delete it. The smoke script defaults `DEFAULT_TRANSCRIPT_LANGUAGE` to `en` for reliable captions on the sample URL; override (e.g. `ko`) when testing other videos.
 
 ## Contributing
 
@@ -373,7 +398,7 @@ When adding a feature:
 1. Add or update schemas in `packages/schemas` or `packages/mcp-tools/src/schemas.ts`.
 2. Put pure domain behavior in `packages/core`.
 3. Put I/O behind a port in `packages/ports`.
-4. Implement local adapters under `packages/*`.
+4. Implement local adapters under `packages/`*.
 5. Wire MCP behavior in `packages/mcp-tools`.
 6. Register new tools in `apps/mcp-server`.
 7. Add unit and integration tests.
@@ -383,8 +408,6 @@ When adding a feature:
 
 Near term:
 
-- Expand Docker smoke to cover the full extraction/tool flow, not only `/healthz`.
-- Improve STT provider errors, timeouts, and file-size handling.
 - Add more fixture-based integration coverage.
 - Publish `@scriptiz/mcp` and the all-in-one image to npm/GHCR (see [docs/MCP_RELEASE.md](docs/MCP_RELEASE.md)).
 - Keep `apps/mcp-ui-web` README aligned with Scriptiz.
