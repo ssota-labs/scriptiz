@@ -10,6 +10,16 @@ You need **Docker Desktop** (or Docker Engine) running and **Node.js 18+** (for 
 
 The `[@scriptiz/mcp](packages/mcp-launcher)` package runs an **all-in-one** image: MCP server + worker + `yt-dlp` + `ffmpeg`, with data in a Docker volume by default.
 
+### First-time setup (recommended)
+
+The first time you connect, your IDE may **time out** while Docker downloads the image (it can be large). **Before** adding Scriptiz in Cursor (or right after installing Docker), run this once in Terminal:
+
+```bash
+docker pull ghcr.io/ssota-labs/scriptiz-mcp:latest
+```
+
+Keep **Docker Desktop (or Engine) running** whenever you use Scriptiz. No extra terminals or “worker” processes are required—the container starts both MCP and the worker.
+
 ### Cursor
 
 Add to `.cursor/mcp.json` (or your user MCP settings):
@@ -76,6 +86,17 @@ Pass `DEFAULT_TRANSCRIPT_LANGUAGE` / STT keys if your CLI supports `-e` flags, o
 ### Data storage
 
 By default, data lives in the Docker named volume `scriptiz-data` (mounted at `/app/data` in the container). To use a folder on your machine instead, set `SCRIPTIZ_DATA_DIR` in the environment where `npx` runs, e.g. `SCRIPTIZ_DATA_DIR=$HOME/.scriptiz`.
+
+### Troubleshooting
+
+- **Connection timed out / MCP error -32001**  
+Often the image was still downloading. Run `docker pull ghcr.io/ssota-labs/scriptiz-mcp:latest` first (see above), then restart the MCP server in your IDE.
+- **Docker: `mkdir .../resources: file exists` (or Scriptiz exits with “must be a directory”)**  
+The data volume may be in a bad state (e.g. `resources` exists as a **file** instead of a folder). Stop any Scriptiz-related containers, then either remove the whole volume (**deletes all stored transcripts/resources**)  
+`docker volume rm scriptiz-data`  
+or switch to a **new** host folder with `SCRIPTIZ_DATA_DIR`.
+- **Red errors in Cursor logs during pull**  
+Docker prints pull progress on stderr; some IDEs label those lines as “error” even when the pull is normal.
 
 ### Advanced: local image (development)
 

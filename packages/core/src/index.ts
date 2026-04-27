@@ -1,4 +1,5 @@
 export { defaultScriptizDataDir } from "./default-data-dir.js";
+export { ensureScriptizDataLayout } from "./data-layout.js";
 export {
   assertSafeStorageSegment,
   isPathUnderRoot,

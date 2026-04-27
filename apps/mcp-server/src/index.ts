@@ -1,7 +1,6 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { defaultScriptizDataDir } from "@scriptiz/core";
+import { defaultScriptizDataDir, ensureScriptizDataLayout } from "@scriptiz/core";
 import { createServer } from "node:http";
-import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { createScriptizMcpContext, createScriptizMcpServer } from "@scriptiz/mcp-tools";
 
@@ -37,7 +36,7 @@ function startHealthCheckIfConfigured() {
 
 async function main() {
   const dataDir = dataDirFromEnv();
-  await mkdir(dataDir, { recursive: true });
+  await ensureScriptizDataLayout(dataDir);
   startHealthCheckIfConfigured();
   const ctx = createScriptizMcpContext({ dataDir });
   const server = createScriptizMcpServer(ctx);
