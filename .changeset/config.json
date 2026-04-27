@@ -8,6 +8,7 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
+    "@scriptiz/cache-noop",
     "@scriptiz/worker",
     "@scriptiz/mcp-server",
     "@scriptiz/docs"
