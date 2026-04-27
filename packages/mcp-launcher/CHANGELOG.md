@@ -1,5 +1,11 @@
 # @scriptiz/mcp
 
+## 0.1.3
+
+### Patch Changes
+
+- Fix `extract_playlist` when yt-dlp returns one NDJSON line per item (synthetic playlist root with real `playlist_id`). Fix `extract_channel_latest` for channel `/videos` tabs the same way (correct channel title and populated `items`). Add unit tests for both handlers.
+
 ## 0.1.2
 
 ### Patch Changes

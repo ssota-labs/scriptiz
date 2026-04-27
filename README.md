@@ -428,7 +428,6 @@ Near term:
 Open-source MCP:
 
 - **MCP Apps HTML:** shared `ui://scriptiz/app` + iframe; data comes from standard tools (`get_timed_transcript`, `get_list_contents`, etc.).
-- Better local scripts for running MCP server and worker together.
 - More source adapters: Vimeo, Loom, podcasts, and direct audio/video files.
 
 Cloud / hosted:
