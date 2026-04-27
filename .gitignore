@@ -13,3 +13,7 @@ coverage
 
 # pnpm pack at repo root (e.g. vendoring @scriptiz/mcp-tools for downstream repos)
 /scriptiz-mcp-tools-*.tgz
+
+# docs/: only MCP_RELEASE.md is versioned; other local planning notes stay out of git
+docs/*
+!docs/MCP_RELEASE.md
