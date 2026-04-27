@@ -6,7 +6,7 @@ description: get_video_transcript_view, get_list_view, get_job_status_view — J
 Scriptiz exposes **two related layers**:
 
 1. **Tool results (JSON)** — built with `@scriptiz/mcp-ui` and returned from the tools below. Hosts that only show text/JSON can still use this.
-2. **[MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview)** — tools declare `_meta.ui.resourceUri` → `ui://scriptiz/app`. The MCP server answers `resources/read` with **`text/html`** (placeholder or the Vite build from `apps/mcp-ui-web` when `SCRIPTIZ_MCP_UI_DIST` is set). **ChatGPT** and other hosts render that HTML in a **sandboxed iframe** and use the standard `ui/*` bridge ([OpenAI notes](https://developers.openai.com/apps-sdk/mcp-apps-in-chatgpt)).
+2. **[MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview)** — tools declare `_meta.ui.resourceUri` → `ui://scriptiz/app`. The MCP server answers `resources/read` with **`text/html`** (placeholder or the Vite build under `packages/mcp-ui/web/dist` when `SCRIPTIZ_MCP_UI_DIST` is set). **ChatGPT** and other hosts render that HTML in a **sandboxed iframe** and use the standard `ui/*` bridge ([OpenAI notes](https://developers.openai.com/apps-sdk/mcp-apps-in-chatgpt)).
 
 For **ChatGPT**, the same URI may also appear as `_meta["openai/outputTemplate"]` (compatibility alias).
 
@@ -42,5 +42,5 @@ List + each item’s **resource** and **transcript language** tags.
 
 ## Local try-out
 
-- **JSON / layout:** `pnpm dev:ui` → demo in `apps/mcp-ui-web` (Vite, no full MCP host required).
-- **MCP Apps iframe:** use a host that implements MCP Apps; build the app and set `SCRIPTIZ_MCP_UI_DIST` to `apps/mcp-ui-web/dist` on the server process. Full `ui/*` integration is tracked as follow-up work.
+- **JSON / layout:** `pnpm dev:ui` → Vite app in `packages/mcp-ui/web` (no full MCP host required).
+- **MCP Apps iframe:** use a host that implements MCP Apps; run `pnpm --filter @scriptiz/mcp-ui run build:web` and set `SCRIPTIZ_MCP_UI_DIST` to `packages/mcp-ui/web/dist`. Full `ui/*` integration is tracked as follow-up work.

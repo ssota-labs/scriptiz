@@ -10,7 +10,6 @@
   "ignore": [
     "@scriptiz/worker",
     "@scriptiz/mcp-server",
-    "@scriptiz/docs",
-    "mcp-ui-web"
+    "@scriptiz/docs"
   ]
 }

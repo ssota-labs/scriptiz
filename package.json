@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev:ui": "pnpm --filter mcp-ui-web dev",
+    "dev:ui": "pnpm --filter @scriptiz/mcp-ui dev:web",
     "dev:docs": "pnpm --filter @scriptiz/docs dev",
     "build": "pnpm -r run build",
     "typecheck": "pnpm -r run build",

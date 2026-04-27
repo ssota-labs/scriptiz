@@ -5,6 +5,6 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["node_modules", "dist", "coverage", "**/dist/**"],
+    ignores: ["node_modules", "dist", "coverage", "**/dist/**", "packages/mcp-ui/web/dist"],
   },
 );
