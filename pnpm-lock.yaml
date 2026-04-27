@@ -65,6 +65,12 @@ importers:
       '@scriptiz/storage-filesystem':
         specifier: workspace:*
         version: link:../../packages/storage-filesystem
+      '@scriptiz/stt-openai':
+        specifier: workspace:*
+        version: link:../../packages/stt-openai
+      '@scriptiz/stt-xai':
+        specifier: workspace:*
+        version: link:../../packages/stt-xai
 
   packages/cache-noop: {}
 
@@ -152,7 +158,17 @@ importers:
         specifier: workspace:*
         version: link:../schemas
 
-  packages/stt-openai: {}
+  packages/stt-openai:
+    dependencies:
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+
+  packages/stt-xai:
+    dependencies:
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
 
 packages:
 

@@ -1,4 +1,7 @@
 import type { ExtractorPort } from "@scriptiz/ports";
+import { access, mkdir, readdir } from "node:fs/promises";
+import path from "node:path";
+import { constants as fsConstants } from "node:fs";
 import { runYtDlp, ytdlpFailed } from "./run-ytdlp.js";
 import { YtDlpError } from "./ytdlp-error.js";
 import { findVttFiles } from "./find-vtt.js";
@@ -101,5 +104,50 @@ export class YtDlpExtractor implements ExtractorPort {
     const vttPath = vtts[0]!;
     const source = captionSourceFromTrack(options.track);
     return { vttPath, source };
+  }
+
+  /**
+   * STT용 베스트 오디오를 M4A로 추출한다. `outputDir` 아래 `fileName`(예: `stt.m4a`)으로 쓴다.
+   */
+  async downloadBestAudioM4a(options: {
+    url: string;
+    outputDir: string;
+    fileName: string;
+  }): Promise<{ audioPath: string }> {
+    await mkdir(options.outputDir, { recursive: true });
+    const r = await runYtDlp(
+      this.binary(),
+      [
+        "-o",
+        options.fileName,
+        "-f",
+        "bestaudio/best",
+        "-x",
+        "--audio-format",
+        "m4a",
+        "--no-warnings",
+      ],
+      options.url,
+      { cwd: options.outputDir },
+    );
+    if (r.exitCode !== 0) {
+      throw ytdlpFailed({ stderr: r.stderr, exitCode: r.exitCode });
+    }
+    const expected = path.join(options.outputDir, options.fileName);
+    try {
+      await access(expected, fsConstants.F_OK);
+      return { audioPath: expected };
+    } catch {
+      const files = await readdir(options.outputDir);
+      const m4a = files.find((f) => f.endsWith(".m4a"));
+      if (m4a) {
+        return { audioPath: path.join(options.outputDir, m4a) };
+      }
+      throw new YtDlpError(
+        "YTDLP_FAILED",
+        "Audio file not found after yt-dlp download",
+        { stderr: r.stderr, exitCode: r.exitCode },
+      );
+    }
   }
 }

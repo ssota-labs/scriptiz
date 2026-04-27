@@ -8,9 +8,12 @@ import {
   YtDlpError,
   YtDlpExtractor,
 } from "@scriptiz/extractor-ytdlp";
+import { transcribeWithOpenAI } from "@scriptiz/stt-openai";
+import { transcribeWithXai } from "@scriptiz/stt-xai";
 import type { ExtractionJob, Transcript } from "@scriptiz/schemas";
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
+import { resolveSttProvider } from "./stt-config.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -27,7 +30,9 @@ export async function processVideoExtractionJob(input: {
   const { queue, storage, extractor, defaultLanguage } = input;
   let job = input.job;
 
-  const subWorkDir = path.join(input.dataDir, "tmp", "subs", job.id);
+  const jobWorkRoot = path.join(input.dataDir, "tmp", "jobs", job.id);
+  const subWorkDir = path.join(jobWorkRoot, "subs");
+  const audioWorkDir = path.join(jobWorkRoot, "audio");
 
   try {
     requireJobTransition(job.status, "fetching_metadata");
@@ -52,20 +57,76 @@ export async function processVideoExtractionJob(input: {
       job.language ?? defaultLanguage,
     );
     if (!track) {
-      if (job.allowSttFallback) {
-        requireJobTransition("fetching_caption", "fallback_required");
-        job = { ...job, status: "fallback_required", updatedAt: nowIso() };
-        await queue.updateRunningJob(job);
+      if (!job.allowSttFallback) {
+        const failed: ExtractionJob = {
+          ...job,
+          status: "failed",
+          errorCode: "SUBTITLE_UNAVAILABLE",
+          errorMessage: "No subtitles found and STT fallback disabled",
+          updatedAt: nowIso(),
+        };
+        await queue.moveToFailed(job.id, failed);
         return;
       }
-      const failed: ExtractionJob = {
-        ...job,
-        status: "failed",
-        errorCode: "SUBTITLE_UNAVAILABLE",
-        errorMessage: "No subtitles found and STT fallback disabled",
+      const stt = resolveSttProvider(process.env);
+      if (!stt) {
+        const failed: ExtractionJob = {
+          ...job,
+          status: "failed",
+          errorCode: "STT_API_KEY_MISSING",
+          errorMessage:
+            "STT fallback requested but no provider: set STT_PROVIDER and OPENAI_API_KEY or XAI_API_KEY",
+          updatedAt: nowIso(),
+        };
+        await queue.moveToFailed(job.id, failed);
+        return;
+      }
+
+      requireJobTransition("fetching_caption", "transcribing");
+      const lang = job.language ?? defaultLanguage;
+      job = { ...job, status: "transcribing", updatedAt: nowIso() };
+      await queue.updateRunningJob(job);
+
+      await rm(audioWorkDir, { recursive: true, force: true }).catch(() => {});
+
+      const { audioPath } = await extractor.downloadBestAudioM4a({
+        url: job.sourceUrl,
+        outputDir: audioWorkDir,
+        fileName: "stt.m4a",
+      });
+
+      const { segments } =
+        stt.provider === "openai"
+          ? await transcribeWithOpenAI({
+              filePath: audioPath,
+              language: lang,
+              apiKey: stt.apiKey,
+            })
+          : await transcribeWithXai({
+              filePath: audioPath,
+              language: lang,
+              apiKey: stt.apiKey,
+            });
+
+      const t: Transcript = {
+        id: makeTranscriptId(resource.id, lang),
+        resourceId: resource.id,
+        language: lang,
+        source: "stt",
+        status: "completed",
+        segments,
+        createdAt: nowIso(),
         updatedAt: nowIso(),
       };
-      await queue.moveToFailed(job.id, failed);
+      await storage.putTranscript(t);
+
+      requireJobTransition("transcribing", "completed");
+      const done: ExtractionJob = {
+        ...job,
+        status: "completed",
+        updatedAt: nowIso(),
+      };
+      await queue.moveToCompleted(job.id, done);
       return;
     }
 
@@ -122,6 +183,6 @@ export async function processVideoExtractionJob(input: {
     };
     await queue.moveToFailed(base.id, failed);
   } finally {
-    await rm(subWorkDir, { recursive: true, force: true }).catch(() => {});
+    await rm(jobWorkRoot, { recursive: true, force: true }).catch(() => {});
   }
 }

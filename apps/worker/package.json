@@ -21,6 +21,8 @@
     "@scriptiz/ports": "workspace:*",
     "@scriptiz/queue-local": "workspace:*",
     "@scriptiz/schemas": "workspace:*",
+    "@scriptiz/stt-openai": "workspace:*",
+    "@scriptiz/stt-xai": "workspace:*",
     "@scriptiz/storage-filesystem": "workspace:*"
   }
 }
