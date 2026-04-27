@@ -1,4 +1,10 @@
 export { createScriptizMcpContext, type ScriptizMcpContext } from "./context.js";
+export {
+  createScriptizMcpServer,
+  registerScriptizTools,
+  SCRIPTIZ_MCP_SERVER_NAME,
+  SCRIPTIZ_MCP_SERVER_VERSION,
+} from "./server-factory.js";
 export { runScriptizTool } from "./handlers.js";
 export {
   handleAddResourceToList,
