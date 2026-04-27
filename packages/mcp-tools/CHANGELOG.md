@@ -4,7 +4,6 @@
 
 ### Patch Changes
 
-- Fix `extract_playlist` when yt-dlp returns one NDJSON line per item (synthetic playlist root with real `playlist_id`). Fix `extract_channel_latest` for channel `/videos` tabs the same way (correct channel title and populated `items`). Add unit tests for both handlers.
 - 484d7da: MCP Apps: `_meta.ui.resourceUri` → `ui://scriptiz/app`, `resources/read` serves HTML (optional `SCRIPTIZ_MCP_UI_DIST`). ChatGPT compatibility: `openai/outputTemplate`.
 
   Fold `@scriptiz/mcp-ui` into `@scriptiz/mcp-tools` (`@scriptiz/mcp-tools/ui`, Vite app under `packages/mcp-tools/web`). All MCP tools share the same `_meta.ui` for `ui://scriptiz/app`.
