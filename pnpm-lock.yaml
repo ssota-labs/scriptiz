@@ -45,9 +45,20 @@ importers:
 
   packages/mcp-ui: {}
 
-  packages/ports: {}
+  packages/ports:
+    dependencies:
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
 
-  packages/queue-local: {}
+  packages/queue-local:
+    dependencies:
+      '@scriptiz/ports':
+        specifier: workspace:*
+        version: link:../ports
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
 
   packages/schemas:
     dependencies:
@@ -55,7 +66,14 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
 
-  packages/storage-filesystem: {}
+  packages/storage-filesystem:
+    dependencies:
+      '@scriptiz/ports':
+        specifier: workspace:*
+        version: link:../ports
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
 
   packages/stt-openai: {}
 

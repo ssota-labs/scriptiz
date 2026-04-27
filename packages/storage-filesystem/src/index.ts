@@ -1,1 +1,2 @@
-export const packageName = "@scriptiz/storage-filesystem" as const;
+export { FilesystemStorage } from "./filesystem-storage.js";
+export { atomicWriteFile } from "./atomic.js";

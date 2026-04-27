@@ -1,1 +1,1 @@
-export const packageName = "@scriptiz/queue-local" as const;
+export { LocalJobQueue, extractionJobsConflict } from "./local-job-queue.js";

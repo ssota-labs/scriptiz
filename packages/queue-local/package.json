@@ -13,5 +13,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@scriptiz/ports": "workspace:*",
+    "@scriptiz/schemas": "workspace:*"
   }
 }
