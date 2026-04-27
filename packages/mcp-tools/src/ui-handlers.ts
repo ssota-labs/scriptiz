@@ -2,7 +2,7 @@ import {
   buildJobStatusView,
   buildListView,
   buildVideoTranscriptView,
-} from "@scriptiz/mcp-ui";
+} from "./ui/index.js";
 import type { ScriptizMcpContext } from "./context.js";
 import {
   getListViewInput,

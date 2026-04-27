@@ -137,15 +137,13 @@ Release process for the launcher + Docker image: `[docs/MCP_RELEASE.md](docs/MCP
 apps/
   mcp-server/      stdio MCP server and tool registration
   worker/          extraction worker that processes queued jobs
-  mcp-ui/web/      Vite MCP Apps UI (demo + `web/dist` for `ui://`); see packages/mcp-ui/README.md
   docs/            Mintlify site (product docs; not the root docs/ planning notes)
 
 packages/
   core/            IDs, cursors, transcript slicing, list logic, safe path helpers
   schemas/         shared domain schemas
   ports/           storage, queue, extractor, and STT interfaces
-  mcp-tools/       MCP tool handlers and input schemas
-  mcp-ui/          MCP UI payload builders (`src/`) + Vite app (`web/`) for MCP Apps HTML
+  mcp-tools/       MCP tool handlers, MCP UI payload builders, Vite app (`web/` for `ui://`) + input schemas
   extractor-ytdlp/ yt-dlp adapter and VTT parsing
   storage-filesystem/
   queue-local/

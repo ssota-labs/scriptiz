@@ -2,7 +2,7 @@ import {
   jobStatusViewSchema,
   listViewSchema,
   videoTranscriptViewSchema,
-} from "@scriptiz/mcp-ui";
+} from "@scriptiz/mcp-tools/ui";
 import { z } from "zod";
 
 const mcpUiViewUnion = z.discriminatedUnion("type", [

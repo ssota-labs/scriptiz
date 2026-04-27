@@ -17,7 +17,10 @@ export default defineConfig({
       "@scriptiz/queue-local": scriptizAlias("queue-local"),
       "@scriptiz/extractor-ytdlp": scriptizAlias("extractor-ytdlp"),
       "@scriptiz/mcp-tools": scriptizAlias("mcp-tools"),
-      "@scriptiz/mcp-ui": scriptizAlias("mcp-ui"),
+      "@scriptiz/mcp-tools/ui": path.resolve(
+        __dirname,
+        "packages/mcp-tools/src/ui/index.ts",
+      ),
       "@scriptiz/stt-openai": scriptizAlias("stt-openai"),
       "@scriptiz/stt-xai": scriptizAlias("stt-xai"),
     },

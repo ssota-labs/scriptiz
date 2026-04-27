@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { McpUiAction, VideoTranscriptView } from "@scriptiz/mcp-ui";
+import type { McpUiAction, VideoTranscriptView } from "@scriptiz/mcp-tools/ui";
 import { useCallback, useState } from "react";
 import YouTube, {
   type YouTubeEvent,

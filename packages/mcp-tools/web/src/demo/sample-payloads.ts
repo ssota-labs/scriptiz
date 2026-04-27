@@ -2,7 +2,7 @@ import {
   buildJobStatusView,
   buildListView,
   buildVideoTranscriptView,
-} from "@scriptiz/mcp-ui";
+} from "@scriptiz/mcp-tools/ui";
 import type { ExtractionJob, Resource } from "@scriptiz/schemas";
 
 const now = "2026-01-01T00:00:00.000Z";

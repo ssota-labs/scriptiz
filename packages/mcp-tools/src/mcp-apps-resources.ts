@@ -12,7 +12,7 @@ const FALLBACK_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <p><strong>Scriptiz MCP App</strong> (shell). This page is loaded in the host&rsquo;s sandboxed iframe per <a href="https://modelcontextprotocol.io/extensions/apps/overview" target="_blank" rel="noopener">MCP Apps</a>.</p>
-  <p>Tool handlers still return JSON for compatibility; the interactive <code>ui/*</code> bridge and bundled UI from <code>packages/mcp-ui/web</code> are expanded in follow-up work. Set <code>SCRIPTIZ_MCP_UI_DIST</code> to <code>…/packages/mcp-ui/web/dist</code> (after <code>pnpm --filter @scriptiz/mcp-ui run build:web</code>) to serve <code>index.html</code> instead of this placeholder.</p>
+  <p>Tool handlers still return JSON for compatibility; the interactive <code>ui/*</code> bridge and bundled UI from <code>packages/mcp-tools/web</code> are expanded in follow-up work. Set <code>SCRIPTIZ_MCP_UI_DIST</code> to <code>…/packages/mcp-tools/web/dist</code> (after <code>pnpm --filter @scriptiz/mcp-tools run build:web</code>) to serve <code>index.html</code> instead of this placeholder.</p>
 </body>
 </html>
 `;

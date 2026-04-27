@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { ListView } from "@scriptiz/mcp-ui";
+import type { ListView } from "@scriptiz/mcp-tools/ui";
 
 type Props = { v: ListView };
 

@@ -14,10 +14,10 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
-# Library builds, then MCP Apps HTML (packages/mcp-ui/web/dist) for ui:// resources
+# Library builds, then MCP Apps HTML (packages/mcp-tools/web/dist) for ui:// resources
 RUN pnpm -r run build
-RUN pnpm --filter @scriptiz/mcp-ui run build:web
-ENV SCRIPTIZ_MCP_UI_DIST=/app/packages/mcp-ui/web/dist
+RUN pnpm --filter @scriptiz/mcp-tools run build:web
+ENV SCRIPTIZ_MCP_UI_DIST=/app/packages/mcp-tools/web/dist
 COPY docker/entrypoint.mcp-all-in-one.sh /usr/local/bin/scriptiz-mcp
 RUN chmod +x /usr/local/bin/scriptiz-mcp
 CMD ["/usr/local/bin/scriptiz-mcp"]

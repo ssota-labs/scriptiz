@@ -67,65 +67,82 @@ export function registerScriptizTools(
     "extract_content",
     "Queue a YouTube video extraction job (metadata + captions).",
     schemas.extractContentInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_extraction_status",
     "Get extraction job status by job id.",
     schemas.jobIdInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
-  reg("get_content", "Get resource and transcript language info.", schemas.getContentInput);
+  reg(
+    "get_content",
+    "Get resource and transcript language info.",
+    schemas.getContentInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
+  );
   reg(
     "get_transcript",
     "Get transcript text (optionally with timestamps) with optional cursor continuation.",
     schemas.getTranscriptInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_timed_transcript",
     "Get timed transcript segments with cursor pagination.",
     schemas.getTimedTranscriptInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_transcript_chunk",
     "Get a transcript chunk by cursor with segment bounds.",
     schemas.getTranscriptChunkInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_transcript_range",
     "Get transcript segments overlapping a time range in ms.",
     schemas.getTranscriptRangeInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "list_available_languages",
     "List caption languages from yt-dlp metadata (resourceId or url).",
     schemas.listAvailableLanguagesInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "extract_playlist",
     "Fetch playlist metadata and video items (no per-item transcript).",
     schemas.extractPlaylistInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "extract_channel_latest",
     "Fetch latest channel uploads as video resources.",
     schemas.extractChannelLatestInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
-  reg("create_list", "Create a new saved list.", schemas.createListInput);
+  reg("create_list", "Create a new saved list.", schemas.createListInput, SCRIPTIZ_MCP_APP_TOOL_META);
   reg(
     "add_resource_to_list",
     "Add a resource to a list.",
     schemas.addResourceToListInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "add_playlist_to_list",
     "Add a playlist (and optionally its videos) to a list.",
     schemas.addPlaylistToListInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_list_contents",
     "Get list metadata and each item with resolved resource.",
     schemas.getListContentsInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
-  reg("list_lists", "List all saved lists (id, name, updatedAt).", z.object({}));
+  reg("list_lists", "List all saved lists (id, name, updatedAt).", z.object({}), SCRIPTIZ_MCP_APP_TOOL_META);
   reg(
     "get_video_transcript_view",
     "MCP UI: video + timed transcript payload (YouTube embed + segments). Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",

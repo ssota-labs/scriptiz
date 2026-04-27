@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { JobStatusView } from "@scriptiz/mcp-ui";
+import type { JobStatusView } from "@scriptiz/mcp-tools/ui";
 import type { ExtractionJobStatus } from "@scriptiz/schemas";
 
 type Props = { v: JobStatusView };
