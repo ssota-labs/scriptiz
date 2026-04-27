@@ -23,14 +23,24 @@ export async function runWorkerLoop(
     dataDir: string;
     pollIntervalMs: number;
     defaultTranscriptLanguage: string;
+    staleRunningJobAfterMs: number;
   },
 ): Promise<void> {
-  const { dataDir, pollIntervalMs, defaultTranscriptLanguage } = options;
+  const {
+    dataDir,
+    pollIntervalMs,
+    defaultTranscriptLanguage,
+    staleRunningJobAfterMs,
+  } = options;
   const storage = new FilesystemStorage(dataDir);
   const queue = new LocalJobQueue(dataDir);
   const extractor = new YtDlpExtractor();
 
   for (;;) {
+    const n = await queue.requeueStaleRunning(staleRunningJobAfterMs, nowIso());
+    if (n > 0) {
+      console.error(`[worker] requeued ${n} stale running job(s)`);
+    }
     const job = await queue.tryClaimNext();
     if (!job) {
       await sleep(pollIntervalMs);
@@ -72,10 +82,17 @@ export async function main() {
   );
   const defaultTranscriptLanguage =
     process.env.DEFAULT_TRANSCRIPT_LANGUAGE ?? "en";
+  const staleRunningJobAfterMs = Number(
+    process.env.WORKER_STALE_JOB_AFTER_MS ?? 30 * 60 * 1000,
+  );
   await runWorkerLoop({
     dataDir,
     pollIntervalMs,
     defaultTranscriptLanguage,
+    staleRunningJobAfterMs: Number.isFinite(staleRunningJobAfterMs) &&
+        staleRunningJobAfterMs > 0
+      ? staleRunningJobAfterMs
+      : 30 * 60 * 1000,
   });
 }
 

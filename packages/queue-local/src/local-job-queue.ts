@@ -89,7 +89,7 @@ export class LocalJobQueue implements JobQueuePort {
       throw new Error("enqueue: job.status must be queued");
     }
     if (!options?.skipDuplicateCheck) {
-      if (await this.hasConflictingRunningJob(parsed)) {
+      if (await this.hasConflictingActiveJob(parsed)) {
         throw new DuplicateRunningJobError();
       }
     }
@@ -237,14 +237,32 @@ export class LocalJobQueue implements JobQueuePort {
   async hasConflictingRunningJob(
     proposed: ExtractionJob,
   ): Promise<boolean> {
+    return this.hasConflictingActiveJob(proposed);
+  }
+
+  /**
+   * True if a conflicting job exists in `queued/` or `running/`.
+   */
+  async hasConflictingActiveJob(
+    proposed: ExtractionJob,
+  ): Promise<boolean> {
+    return (
+      (await this.hasConflictingInDir(this.sub("queued"), proposed)) ||
+      (await this.hasConflictingInDir(this.sub("running"), proposed))
+    );
+  }
+
+  private async hasConflictingInDir(
+    dir: string,
+    proposed: ExtractionJob,
+  ): Promise<boolean> {
     await this.ensureDirs();
-    const runDir = this.sub("running");
-    if (!(await fileExists(runDir))) {
+    if (!(await fileExists(dir))) {
       return false;
     }
-    const names = (await readdir(runDir)).filter((f) => f.endsWith(".json"));
+    const names = (await readdir(dir)).filter((f) => f.endsWith(".json"));
     for (const n of names) {
-      const p = path.join(runDir, n);
+      const p = path.join(dir, n);
       const text = await readFile(p, "utf8");
       const other = extractionJobSchema.parse(JSON.parse(text) as unknown);
       if (extractionJobsConflict(other, proposed)) {

@@ -68,14 +68,24 @@ describe("LocalJobQueue", () => {
   });
 
   it("throws on duplicate while another is running", async () => {
-    await q.enqueue(job("job_1", "queued"));
+    const watch = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    await q.enqueue(job("job_1", "queued", { sourceUrl: watch }));
     await q.tryClaimNext();
-    const second = job("job_2", "queued", {
-      sourceUrl: "https://www.youtube.com/watch?v=testvid",
-    });
+    const second = job("job_2", "queued", { sourceUrl: watch });
     await expect(q.enqueue(second)).rejects.toBeInstanceOf(
       DuplicateRunningJobError,
     );
+  });
+
+  it("throws on duplicate when both are still queued", async () => {
+    const a = job("job_q1", "queued", {
+      sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    });
+    const b = job("job_q2", "queued", {
+      sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    });
+    await q.enqueue(a);
+    await expect(q.enqueue(b)).rejects.toBeInstanceOf(DuplicateRunningJobError);
   });
 
   it("requeues stale running jobs to queued", async () => {

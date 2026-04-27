@@ -1,6 +1,7 @@
 export type YtDlpErrorCode =
   | "YTDLP_NOT_FOUND"
   | "YTDLP_FAILED"
+  | "YTDLP_TIMEOUT"
   | "PARSE_FAILED"
   | "VIDEO_UNAVAILABLE"
   | "SUBTITLE_UNAVAILABLE"

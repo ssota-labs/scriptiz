@@ -1,4 +1,8 @@
 export { defaultScriptizDataDir } from "./default-data-dir.js";
+export {
+  assertSafeStorageSegment,
+  isPathUnderRoot,
+} from "./safe-storage-id.js";
 export { makeResourceId, makeTranscriptId } from "./resource-id.js";
 export {
   decodeTranscriptCursor,

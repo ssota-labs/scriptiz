@@ -52,9 +52,11 @@ import {
 } from "./ui-handlers.js";
 import {
   ensureChannelVideosUrl,
-  isLikelyChannelTabUrl,
-  isLikelyPlaylistUrl,
+  isStrictYouTubeChannelOrTabUrl,
+  isStrictYouTubePlaylistUrl,
+  isStrictYouTubeVideoUrl,
   parseYoutubeVideoId,
+  toStrictYouTubeUrl,
 } from "./youtube-url.js";
 
 function nowIso() {
@@ -96,10 +98,10 @@ export async function handleExtractContent(
   }
   const { url, language, allowSttFallback, forceRefresh } = parsed.data;
   const vid = parseYoutubeVideoId(url);
-  if (!vid) {
+  if (!vid || !isStrictYouTubeVideoUrl(url)) {
     return toolErr(
       "UNSUPPORTED_URL",
-      "Not a YouTube video or Shorts watch URL",
+      "Not a supported YouTube video or Shorts watch URL",
       false,
     );
   }
@@ -393,6 +395,13 @@ export async function handleListAvailableLanguages(
       false,
     );
   }
+  if (!isStrictYouTubeVideoUrl(targetUrl)) {
+    return toolErr(
+      "UNSUPPORTED_URL",
+      "Not a supported YouTube video or Shorts watch URL",
+      false,
+    );
+  }
   try {
     const dump = await ctx.extractor.getMetadataDump(targetUrl);
     return { languages: listLanguageOptionsFromDump(dump) };
@@ -410,10 +419,10 @@ export async function handleExtractPlaylist(
     return toolErr("VALIDATION_ERROR", parsed.error.message, false);
   }
   const { url, maxItems = 200 } = parsed.data;
-  if (!isLikelyPlaylistUrl(url)) {
+  if (!isStrictYouTubePlaylistUrl(url)) {
     return toolErr(
       "UNSUPPORTED_URL",
-      "Not a YouTube playlist URL (add list= or use a playlist link)",
+      "Not a supported YouTube playlist URL (add list= or use a playlist link)",
       false,
     );
   }
@@ -459,11 +468,21 @@ export async function handleExtractChannelLatest(
     return toolErr("VALIDATION_ERROR", parsed.error.message, false);
   }
   const { maxItems = 20 } = parsed.data;
-  const url = ensureChannelVideosUrl(parsed.data.url);
-  if (!isLikelyChannelTabUrl(url) && !isLikelyPlaylistUrl(url)) {
-    if (!url.includes("youtube.com") && !url.includes("m.youtube.com")) {
-      return toolErr("UNSUPPORTED_URL", "Expected a YouTube channel URL", false);
-    }
+  const strict = toStrictYouTubeUrl(parsed.data.url);
+  if (!strict) {
+    return toolErr(
+      "UNSUPPORTED_URL",
+      "Not a supported YouTube channel, tab, or playlist URL",
+      false,
+    );
+  }
+  const url = ensureChannelVideosUrl(strict.toString());
+  if (!isStrictYouTubeChannelOrTabUrl(url)) {
+    return toolErr(
+      "UNSUPPORTED_URL",
+      "Expected a YouTube channel (/@.../videos, /channel/..., /c/...), or playlist URL",
+      false,
+    );
   }
   try {
     const parts = await ctx.extractor.getMetadataDumpLines(url, {
@@ -571,6 +590,13 @@ export async function handleAddPlaylistToList(
     now: nowIso(),
   });
   if (includeItems) {
+    if (!isStrictYouTubePlaylistUrl(pl.sourceUrl)) {
+      return toolErr(
+        "UNSUPPORTED_URL",
+        "Playlist resource has a non-YouTube or unsupported sourceUrl",
+        false,
+      );
+    }
     try {
       const parts = await ctx.extractor.getMetadataDumpLines(pl.sourceUrl, {
         playlistEnd: 5000,
@@ -643,7 +669,9 @@ function mapYtdlpToToolErr(e: unknown): ToolErrorBody {
     return toolErr(
       e.code,
       e.message,
-      e.code === "VIDEO_UNAVAILABLE" || e.code === "YTDLP_FAILED",
+      e.code === "VIDEO_UNAVAILABLE" ||
+        e.code === "YTDLP_FAILED" ||
+        e.code === "YTDLP_TIMEOUT",
     );
   }
   if (e instanceof Error) {

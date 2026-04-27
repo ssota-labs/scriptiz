@@ -254,6 +254,9 @@ importers:
 
   packages/storage-filesystem:
     dependencies:
+      '@scriptiz/core':
+        specifier: workspace:*
+        version: link:../core
       '@scriptiz/ports':
         specifier: workspace:*
         version: link:../ports

@@ -5,6 +5,7 @@ coverage
 .pnpm-store
 .DS_Store
 .env
+.env.local
 .env.*.local
 
 # Local agent / IDE state

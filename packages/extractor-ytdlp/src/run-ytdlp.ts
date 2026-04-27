@@ -3,6 +3,14 @@ import { YtDlpError } from "./ytdlp-error.js";
 
 const MAX_BUFFER = 50 * 1024 * 1024;
 
+function defaultYtdlpTimeoutMs(): number {
+  const n = Number(process.env.YTDLP_TIMEOUT_MS);
+  if (Number.isFinite(n) && n > 0) {
+    return n;
+  }
+  return 600_000;
+}
+
 /**
  * `argv0` = yt-dlp binary, `url` is passed as the last arg when `url` is set.
  */
@@ -10,9 +18,10 @@ export async function runYtDlp(
   argv0: string,
   beforeUrl: string[],
   url?: string,
-  options?: { cwd?: string },
+  options?: { cwd?: string; timeoutMs?: number },
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   const args = url ? [...beforeUrl, url] : beforeUrl;
+  const timeoutMs = options?.timeoutMs ?? defaultYtdlpTimeoutMs();
   return new Promise((resolve, reject) => {
     let settled = false;
     const finish = (fn: () => void) => {
@@ -30,6 +39,25 @@ export async function runYtDlp(
     let out = "";
     let err = "";
     let outLen = 0;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    if (timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        try {
+          p.kill("SIGKILL");
+        } catch {
+          /* ignore */
+        }
+        finish(() =>
+          reject(
+            new YtDlpError(
+              "YTDLP_TIMEOUT",
+              `yt-dlp timed out after ${timeoutMs}ms`,
+              { stderr: err },
+            ),
+          ),
+        );
+      }, timeoutMs);
+    }
     p.stdout?.on("data", (b: Buffer) => {
       out += b.toString("utf8");
       outLen += b.length;
@@ -59,6 +87,9 @@ export async function runYtDlp(
       finish(() => reject(e));
     });
     p.on("close", (code) => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
       finish(() => resolve({ stdout: out, stderr: err, exitCode: code ?? 1 }));
     });
   });

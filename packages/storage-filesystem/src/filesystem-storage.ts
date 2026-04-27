@@ -1,3 +1,4 @@
+import { assertSafeStorageSegment, isPathUnderRoot } from "@scriptiz/core";
 import type {
   ListStorePort,
   ResourceStorePort,
@@ -32,21 +33,47 @@ export class FilesystemStorage
 {
   constructor(private readonly dataRoot: string) {}
 
+  private safeResourceId(resourceId: string) {
+    assertSafeStorageSegment(resourceId, "resourceId");
+  }
+
+  private safeListId(id: string) {
+    assertSafeStorageSegment(id, "listId");
+  }
+
   private resourcePath(id: string) {
-    return path.join(this.dataRoot, "resources", `${id}.json`);
+    this.safeResourceId(id);
+    const p = path.join(this.dataRoot, "resources", `${id}.json`);
+    if (!isPathUnderRoot(this.dataRoot, p)) {
+      throw new Error("resource path outside data root");
+    }
+    return p;
   }
 
   private listPath(id: string) {
-    return path.join(this.dataRoot, "lists", `${id}.json`);
+    this.safeListId(id);
+    const p = path.join(this.dataRoot, "lists", `${id}.json`);
+    if (!isPathUnderRoot(this.dataRoot, p)) {
+      throw new Error("list path outside data root");
+    }
+    return p;
   }
 
   private transcriptPath(resourceId: string, language: string) {
-    return path.join(
+    this.safeResourceId(resourceId);
+    if (!LANG_SEG.test(language)) {
+      throw new Error("Invalid language for transcript path");
+    }
+    const p = path.join(
       this.dataRoot,
       "transcripts",
       resourceId,
       `${language}.json`,
     );
+    if (!isPathUnderRoot(this.dataRoot, p)) {
+      throw new Error("transcript path outside data root");
+    }
+    return p;
   }
 
   private rawSubtitlePath(
@@ -54,12 +81,20 @@ export class FilesystemStorage
     language: string,
     ext: string,
   ) {
-    return path.join(
+    this.safeResourceId(resourceId);
+    if (!LANG_SEG.test(language)) {
+      throw new Error("Invalid language for raw subtitle file");
+    }
+    const p = path.join(
       this.dataRoot,
       "transcripts",
       resourceId,
       `raw.${language}.${ext}`,
     );
+    if (!isPathUnderRoot(this.dataRoot, p)) {
+      throw new Error("raw subtitle path outside data root");
+    }
+    return p;
   }
 
   /* ResourceStorePort */
@@ -87,9 +122,6 @@ export class FilesystemStorage
     resourceId: string,
     language: string,
   ): Promise<Transcript | null> {
-    if (!LANG_SEG.test(language)) {
-      throw new Error("Invalid language for transcript path");
-    }
     const p = this.transcriptPath(resourceId, language);
     if (!(await fileExists(p))) {
       return null;
@@ -99,9 +131,6 @@ export class FilesystemStorage
   }
 
   async putTranscript(transcript: Transcript): Promise<void> {
-    if (!LANG_SEG.test(transcript.language)) {
-      throw new Error("Invalid language for transcript path");
-    }
     const parsed = transcriptSchema.parse(transcript);
     await atomicWriteFile(
       this.transcriptPath(parsed.resourceId, parsed.language),
@@ -115,16 +144,17 @@ export class FilesystemStorage
     body: string,
     format: "vtt" = "vtt",
   ): Promise<string> {
-    if (!LANG_SEG.test(language)) {
-      throw new Error("Invalid language for raw subtitle file");
-    }
     const p = this.rawSubtitlePath(resourceId, language, format);
     await atomicWriteFile(p, body);
     return rawSubtitleRelative(resourceId, language, format);
   }
 
   async listTranscriptLanguageCodes(resourceId: string): Promise<string[]> {
+    this.safeResourceId(resourceId);
     const root = path.join(this.dataRoot, "transcripts", resourceId);
+    if (!isPathUnderRoot(this.dataRoot, root)) {
+      throw new Error("transcripts path outside data root");
+    }
     if (!(await fileExists(root))) {
       return [];
     }

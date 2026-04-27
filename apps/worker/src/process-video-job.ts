@@ -8,8 +8,8 @@ import {
   YtDlpError,
   YtDlpExtractor,
 } from "@scriptiz/extractor-ytdlp";
-import { transcribeWithOpenAI } from "@scriptiz/stt-openai";
-import { transcribeWithXai } from "@scriptiz/stt-xai";
+import { SttFileTooLargeError as SttTooLargeOai, transcribeWithOpenAI } from "@scriptiz/stt-openai";
+import { SttFileTooLargeError as SttTooLargeXai, transcribeWithXai } from "@scriptiz/stt-xai";
 import type { ExtractionJob, Transcript } from "@scriptiz/schemas";
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
@@ -168,7 +168,9 @@ export async function processVideoExtractionJob(input: {
   } catch (e) {
     const code = e instanceof YtDlpError
       ? e.code
-      : e instanceof Error
+      : e instanceof SttTooLargeOai || e instanceof SttTooLargeXai
+        ? "STT_FILE_TOO_LARGE"
+        : e instanceof Error
         ? "EXTRACT_ERROR"
         : "UNKNOWN";
     const message = e instanceof Error ? e.message : String(e);
