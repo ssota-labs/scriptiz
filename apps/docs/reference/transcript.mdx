@@ -1,0 +1,69 @@
+---
+title: Transcript
+description: get_content, get_transcript, get_timed_transcript, get_transcript_chunk, get_transcript_range
+---
+
+## `get_content`
+
+**Input:** `{ "resourceId": string }`
+
+**Success:** `resource`, `transcriptLanguages`, `hasTimedTranscript`  
+**Errors:** `NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+## `get_transcript`
+
+Returns transcript text from the **start**, optionally with timestamps. Default `maxSegments` is 100; if more data exists, `nextCursor` is returned.
+
+**Input**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `resourceId` | string | required |
+| `language` | string | Optional; default / first available |
+| `includeTimestamps` | boolean | Include segment array |
+| `maxSegments` | number | Positive integer, default cap 100 |
+
+**Errors:** `VALIDATION_ERROR`, `NO_TRANSCRIPT` (no transcript or language)
+
+---
+
+## `get_timed_transcript`
+
+Timed segments with **cursor** pagination (`limit` default 100, max 2000).
+
+**Input:** `resourceId`, `language?`, `cursor?`, `limit?`
+
+**Success:** `resourceId`, `language`, `segments`, `nextCursor?`  
+**Errors:** `VALIDATION_ERROR`, `NO_TRANSCRIPT`, `INVALID_CURSOR`
+
+---
+
+## `get_transcript_chunk`
+
+Cursor-based **chunk** (text-first; set `includeTimestamps` for segments). `limitSegments` default 50, max 2000.
+
+**Input:** `resourceId`, `language?`, `cursor?`, `limitSegments?`, `includeTimestamps?`
+
+**Success:** `resourceId`, `language`, `startIndex`, `endIndex`, `text`, `cursor?`, `nextCursor?`, `segments?`  
+**Errors:** `NO_TRANSCRIPT`, `INVALID_CURSOR`, `VALIDATION_ERROR`
+
+---
+
+## `get_transcript_range`
+
+Segments overlapping `startMs`–`endMs`.
+
+**Input:** `resourceId`, `language?`, `startMs` (≥0), `endMs` (≥0), **`endMs` ≥ `startMs`**
+
+**Success:** `resourceId`, `language`, `startMs`, `endMs`, `text`, `segments`  
+**Errors:** `INVALID_RANGE` (`endMs` < `startMs`), `NO_TRANSCRIPT`, `VALIDATION_ERROR`
+
+## Transcript-related codes
+
+| Code | Description |
+|------|-------------|
+| `NO_TRANSCRIPT` | No transcript yet / language not available |
+| `INVALID_CURSOR` | Cursor does not match resource or language, or is corrupt |
+| `INVALID_RANGE` | Invalid time range |

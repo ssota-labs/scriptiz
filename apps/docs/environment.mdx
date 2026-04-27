@@ -1,0 +1,52 @@
+---
+title: Environment variables
+description: DATA_DIR, worker, STT, Docker MCP behavior, and the npx launcher
+---
+
+The tables below match the root `docker-compose.yml`, the all-in-one Docker image, and the `@scriptiz/mcp` launcher. For local development you may set only a subset.
+
+## `@scriptiz/mcp` launcher (host)
+
+These variables control **how** the launcher invokes Docker. They are **not** passed into the container unless listed below.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SCRIPTIZ_DOCKER_IMAGE` | `ghcr.io/scriptiz/scriptiz-mcp:latest` | Image to run |
+| `SCRIPTIZ_DOCKER_VOLUME` | `scriptiz-data` | Docker **named** volume mounted at `/app/data` |
+| `SCRIPTIZ_DATA_DIR` | (unset) | If set, **bind-mount** this host path to `/app/data` instead of using a named volume |
+| `SCRIPTIZ_DOCKER_PULL` | `missing` | `always`, `missing`, or `never` → passed to `docker run --pull` |
+
+The launcher forwards these into the container when set (same names as in the tables below):  
+`DEFAULT_TRANSCRIPT_LANGUAGE`, `DEFAULT_LANGUAGE`, `STT_PROVIDER`, `OPENAI_API_KEY`, `XAI_API_KEY`, `WORKER_POLL_INTERVAL_MS`, `WORKER_STALE_JOB_AFTER_MS`, `YTDLP_TIMEOUT_MS`, `STT_TIMEOUT_MS`, `STT_MAX_AUDIO_BYTES`.
+
+Inside the all-in-one container, `DATA_DIR` is always **`/app/data`**. The MCP process and worker share that directory.
+
+## MCP server (`apps/mcp-server`)
+
+| Variable | Description |
+|----------|-------------|
+| `DATA_DIR` | Root for resources, transcripts, jobs, lists. Default: `~/.scriptiz` if unset |
+| `DEFAULT_TRANSCRIPT_LANGUAGE` | Default caption/transcript language code (e.g. `ko`) |
+| `HEALTH_CHECK_PORT` | If set, serves `/` and `/healthz` with plain text `ok` on `0.0.0.0:port` |
+| `SCRIPTIZ_MCP_START_STDIO` | If `0`/`false`, stdio MCP is off (health only) |
+
+## Worker (`apps/worker`)
+
+In the **all-in-one** image, the worker runs in the same container and uses the same `DATA_DIR` as the MCP server.
+
+| Variable | Default (typical) | Description |
+|----------|-------------------|-------------|
+| `DATA_DIR` | (required) | **Must match** the MCP server |
+| `DEFAULT_TRANSCRIPT_LANGUAGE` | `ko` | When the request has no language |
+| `WORKER_POLL_INTERVAL_MS` | `2000` | Queue poll interval |
+| `WORKER_STALE_JOB_AFTER_MS` | `1800000` | Stale running job recovery (30 min) |
+| `YTDLP_TIMEOUT_MS` | `600000` | yt-dlp timeout |
+| `STT_TIMEOUT_MS` | `300000` | STT API timeout |
+| `STT_MAX_AUDIO_BYTES` | `26214400` | Max audio size sent to STT |
+| `STT_PROVIDER` | empty | `openai` or `xai` for captionless fallback |
+| `OPENAI_API_KEY` | | OpenAI transcription |
+| `XAI_API_KEY` | | xAI transcription |
+
+## Schema source of truth
+
+Tool input/output Zod definitions live in `packages/mcp-tools/src/schemas.ts` in the repo.

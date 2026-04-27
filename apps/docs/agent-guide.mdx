@@ -1,0 +1,50 @@
+---
+title: Agent guide
+description: Recommended tool order and job-based vs immediate tools
+---
+
+## Tools that enqueue jobs
+
+These enqueue **async extraction**. The response includes a `jobId`; poll **`get_extraction_status`** until complete.
+
+- **`extract_content`** — a single YouTube video URL. If a transcript for the same language already exists, you may get `alreadyExtracted: true` immediately.
+
+## Immediate tools (storage read/write)
+
+- **Status:** `get_extraction_status`
+- **Resource & languages:** `get_content`, `list_available_languages`
+- **Transcript text:** `get_transcript` (long output may include `nextCursor`)
+- **Timed segments:** `get_timed_transcript`, `get_transcript_chunk`, `get_transcript_range`
+- **Bulk metadata:** `extract_playlist`, `extract_channel_latest` (saves metadata + item resources on the MCP side; **does not** create per-video `extract_content` jobs — run `extract_content` later for captions)
+- **Lists:** `create_list`, `add_resource_to_list`, `add_playlist_to_list`, `get_list_contents`, `list_lists`
+- **MCP UI payloads:** `get_video_transcript_view`, `get_list_view`, `get_job_status_view`
+
+## Recommended flow: video → read transcript
+
+1. `extract_content` with `{ "url": "<watch URL>" }` — `language` and `allowSttFallback` are optional.
+2. `get_extraction_status` with `{ "jobId" }` — repeat until `status` is `completed` (agent loop / re-invocation).
+3. On failure, inspect `errorCode` / `errorMessage` (e.g. no captions and STT disabled).
+4. `get_content` with `{ "resourceId" }` — check `transcriptLanguages`.
+5. For body text, use `get_transcript` or `get_timed_transcript` / `get_transcript_range`.
+
+## Cursors
+
+- `get_transcript` may return **`nextCursor`** when there are many segments; pass it on the next call to continue.
+- `get_timed_transcript` and `get_transcript_chunk` use the same cursor model (`encodeTranscriptCursor` / `decodeTranscriptCursor`).
+
+## Error response shape
+
+On error, JSON looks like the following; the MCP layer may set `isError: true`.
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "…",
+    "retryable": false
+  }
+}
+```
+
+See [Extraction reference](/reference/extraction) and the other reference pages for codes.

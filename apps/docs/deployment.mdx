@@ -1,0 +1,43 @@
+---
+title: Mintlify Cloud
+description: Monorepo path, GitHub app, custom domain, optional CI checks
+---
+
+Official product documentation for this repo lives in **`apps/docs`** (separate from the root `docs/` planning notes).
+
+## 1. Mintlify dashboard
+
+1. Sign in with GitHub at [dashboard.mintlify.com](https://dashboard.mintlify.com/).
+2. Under **Git settings**, connect the repository and install the GitHub App.
+3. Enable **Monorepo** and set the **documentation path** to the following **without a trailing slash**: `apps/docs`
+4. The default deploy URL is `https://<subdomain>.mintlify.app`. Check the Overview page.
+
+## 2. Custom domain (optional)
+
+Follow [Mintlify: Custom domain](https://www.mintlify.com/docs/customize/custom-domain) to configure DNS (CNAME).
+
+## 3. Local preview
+
+```bash
+pnpm dev:docs
+```
+
+Edits to `docs.json` and `*.mdx` appear in the preview.
+
+## 4. Link checks in PRs (optional)
+
+From the repo root:
+
+```bash
+pnpm --filter @scriptiz/docs run broken-links
+```
+
+Or from `apps/docs`, `pnpm run broken-links`. Add to CI to validate internal links before merge.
+
+## Self-hosting
+
+Mintlify **production** sites usually run on **Mintlify hosting**. Your content (MDX, `docs.json`) stays in Git; if you need full self-hosting later, you can migrate to Docusaurus, VitePress, or similar.
+
+## Publishing `@scriptiz/mcp` and the Docker image
+
+End-user install docs assume the **`@scriptiz/mcp`** package on npm and a default image (e.g. on GHCR). In the monorepo, see **`docs/MCP_RELEASE.md`** at the repository root for version alignment, `docker build` / `docker push`, and `npm publish` steps.

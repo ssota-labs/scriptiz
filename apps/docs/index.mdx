@@ -1,0 +1,33 @@
+---
+title: Introduction
+description: Scope and layout of the Scriptiz multi-source extraction MCP
+---
+
+Scriptiz MCP is a **self-hosted** server that extracts metadata and captions (or STT fallback) from **YouTube** content and exposes **timed transcripts** through MCP tools and MCP UI payloads. Resources, jobs, and lists are stored on the local filesystem (or, with the **recommended install**, inside a Docker volume).
+
+## What the MVP includes
+
+- YouTube video metadata extraction
+- Native/auto captions; OpenAI or xAI Whisper-style STT fallback when configured and captions are missing
+- Playlist and channel latest-upload metadata
+- Timed transcripts, cursor-based chunks, and time-range reads
+- Local list management
+- MCP UI payloads for video + transcript, lists, and job status
+- **Recommended setup:** `npx -y @scriptiz/mcp` + Docker (all-in-one image: MCP stdio + worker + `yt-dlp` + `ffmpeg`) — [Quickstart](/quickstart)
+- **Alternative (contributors / debugging):** Docker Compose for split `mcp-server` (health) + `worker`, or run processes on the host
+
+## What the MVP does not include
+
+- A standalone consumer web app, summary templates, recommendations, or full-text search over transcripts
+- Remote storage (e.g. Supabase), hosted caches, or Redis
+- Billing, teams, or workspaces
+
+## Layout
+
+| Piece | Role |
+|-------|------|
+| `apps/mcp-server` | MCP stdio server, tool registration, storage under local `DATA_DIR` |
+| `apps/worker` | Consumes jobs from the queue, runs yt-dlp and STT |
+| Shared data directory | `resources/`, `transcripts/`, `lists/`, `jobs/`, etc. ([Architecture](/architecture)) |
+
+Connect your IDE with [Quickstart](/quickstart) (start with the **npx** path unless you are developing from a clone), then see [Agent guide](/agent-guide) for recommended call order.

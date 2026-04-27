@@ -1,0 +1,144 @@
+---
+title: Quickstart
+description: Install with npx and Docker, or run from source with Docker Compose
+---
+
+## Recommended: `npx` + Docker (all-in-one)
+
+For most users, Scriptiz is installed as the **`@scriptiz/mcp`** package. It runs a **single Docker image** that contains:
+
+- MCP server (stdio)
+- Extraction worker (`yt-dlp`, `ffmpeg`)
+- Shared `DATA_DIR` at `/app/data`
+
+You need **Docker Desktop** (or Docker Engine) running and **Node.js 18+** (so `npx` works). You do **not** need to clone the repo or install `yt-dlp` on your machine.
+
+<Note>
+  Until `@scriptiz/mcp` and the default image are published, build the image locally and set `SCRIPTIZ_DOCKER_IMAGE=scriptiz-mcp:local` (see [Local image](#local-image-before-npmghcr-publish) below).
+</Note>
+
+### Cursor
+
+Add to **Settings → MCP** (e.g. `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "scriptiz": {
+      "command": "npx",
+      "args": ["-y", "@scriptiz/mcp"],
+      "env": {
+        "DEFAULT_TRANSCRIPT_LANGUAGE": "ko"
+      }
+    }
+  }
+}
+```
+
+Optional STT when there are no captions:
+
+```json
+{
+  "mcpServers": {
+    "scriptiz": {
+      "command": "npx",
+      "args": ["-y", "@scriptiz/mcp"],
+      "env": {
+        "DEFAULT_TRANSCRIPT_LANGUAGE": "ko",
+        "STT_PROVIDER": "openai",
+        "OPENAI_API_KEY": "sk-..."
+      }
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add scriptiz -- npx -y @scriptiz/mcp
+```
+
+Pass `DEFAULT_TRANSCRIPT_LANGUAGE` and STT keys via your environment or CLI if supported.
+
+### Data storage (named volume or folder)
+
+- **Default:** Docker named volume `scriptiz-data` → `/app/data` inside the container.
+- **Host folder instead:** set `SCRIPTIZ_DATA_DIR` in the environment where `npx` runs, e.g. `SCRIPTIZ_DATA_DIR=$HOME/.scriptiz`.
+
+See [Environment](/environment) for all launcher and container variables.
+
+### Local image (before npm/GHCR publish)
+
+From a clone of the repository:
+
+```bash
+pnpm install
+pnpm docker:build:mcp
+```
+
+Then point the launcher at the local tag and avoid pulling a missing remote image:
+
+```bash
+SCRIPTIZ_DOCKER_IMAGE=scriptiz-mcp:local \
+SCRIPTIZ_DOCKER_PULL=never \
+npx --yes @scriptiz/mcp
+```
+
+Publishers: monorepo file `docs/MCP_RELEASE.md` describes pushing the image to GHCR and publishing the npm package.
+
+---
+
+## Alternative: Docker Compose (split services)
+
+The root `docker-compose.yml` runs **`mcp-server`** and **`worker`** with a shared volume. The `mcp-server` service is configured with **`SCRIPTIZ_MCP_START_STDIO=0`** in detached mode so it is mainly for **HTTP health** (`/healthz`), not for attaching an MCP client via stdio inside that container.
+
+```bash
+cd /path/to/scriptiz
+docker compose up -d --build
+```
+
+- Health: [http://127.0.0.1:8080/healthz](http://127.0.0.1:8080/healthz)
+- For **real MCP tool usage** with this layout, run `mcp-server` on the **host** and share the same `DATA_DIR` as the worker, or use the **all-in-one `npx` + Docker** path at the top of this page.
+
+---
+
+## From source: host MCP + worker (developers)
+
+1. **Node.js** 22+, **pnpm** 9.x, and a clone of the repo.
+2. `pnpm install && pnpm build`
+3. Run the worker (needs `yt-dlp` and `ffmpeg` on `PATH` if not using Docker for the worker).
+4. Run the MCP server with the **same** `DATA_DIR` (default local data: `~/.scriptiz` — [Environment](/environment)).
+
+Example **Cursor** config using built artifacts:
+
+```json
+{
+  "mcpServers": {
+    "scriptiz": {
+      "command": "node",
+      "args": ["/absolute/path/to/scriptiz/apps/mcp-server/dist/index.js"],
+      "env": {
+        "DATA_DIR": "/absolute/path/to/your-data",
+        "DEFAULT_TRANSCRIPT_LANGUAGE": "ko"
+      }
+    }
+  }
+}
+```
+
+---
+
+## This documentation site (local preview)
+
+```bash
+pnpm dev:docs
+```
+
+Open the Mintlify dev server (default `http://localhost:3000`).
+
+## Next
+
+- [Architecture](/architecture) — `DATA_DIR`, all-in-one vs Compose
+- [Environment](/environment) — complete variable list
+- [Agent guide](/agent-guide) — tool order and flows

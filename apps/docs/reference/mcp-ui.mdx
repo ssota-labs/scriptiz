@@ -1,0 +1,38 @@
+---
+title: MCP UI
+description: get_video_transcript_view, get_list_view, get_job_status_view
+---
+
+Builds **structured JSON** that clients (e.g. Cursor MCP UI) can **render**, using builders from `packages/mcp-ui`.
+
+## `get_video_transcript_view`
+
+**Video** resource + timed segments (and embed URL) payload.
+
+**Input:** `resourceId`, `language?`, `cursor?`, `limit?` (default 500, max 2000)
+
+**Errors:** `NOT_FOUND`, `INVALID_RESOURCE` (not a video), `NO_TRANSCRIPT`, `INVALID_CURSOR`, `BUILD_UI_PAYLOAD` (build failure), `VALIDATION_ERROR`
+
+## `get_list_view`
+
+List + each item’s **resource** and **transcript language** tags.
+
+**Input:** `{ "listId": string }`  
+**Errors:** `NOT_FOUND`
+
+## `get_job_status_view`
+
+**Input:** `{ "jobId": string }` (same `jobId` schema as other tools)
+
+**Success:** Job + optional resource metadata (payload from `@scriptiz/mcp-ui` `buildJobStatusView`)  
+**Errors:** `JOB_NOT_FOUND`, `VALIDATION_ERROR`
+
+## UI-only codes (summary)
+
+| Code | Description |
+|------|-------------|
+| `INVALID_RESOURCE` | Transcript view requires `type: video` |
+| `BUILD_UI_PAYLOAD` | Internal builder threw |
+| `NOT_FOUND` / `JOB_NOT_FOUND` | Resource or job missing |
+
+To try the UI locally, use the demo in `apps/mcp-ui-web`.

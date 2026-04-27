@@ -1,0 +1,41 @@
+---
+title: Troubleshooting
+description: Captions, STT, jobs, Docker volumes, and the queue
+---
+
+## `npx @scriptiz/mcp` fails or cannot pull the image
+
+- Ensure **Docker is running** (`docker version` works in a terminal).
+- If the default image is not published yet, build locally and set `SCRIPTIZ_DOCKER_IMAGE=scriptiz-mcp:local` and `SCRIPTIZ_DOCKER_PULL=never` (see [Quickstart](/quickstart)).
+- If you use `SCRIPTIZ_DATA_DIR`, the path must exist and be readable on the host.
+
+## MCP tools do not attach in Docker Compose `mcp-server`
+
+- Compose defaults to `SCRIPTIZ_MCP_START_STDIO=0`, so that **service** only exposes **health**, not stdio MCP. Use the [**all-in-one `npx` path**](/quickstart), or run `mcp-server` on the **host** for Cursor/CLI MCP.
+- The host MCP and worker must share the **same `DATA_DIR`** for job results to appear. Mount the volume to a host path and use that as `DATA_DIR`, or run both processes locally without Docker for development.
+
+## `NO_TRANSCRIPT` / empty transcript
+
+- Confirm the `extract_content` job is `completed` via `get_extraction_status`.
+- If there are no captions and **`allowSttFallback: false`**, STT is not used. Check the worker has `STT_PROVIDER` and API keys, and that `STT_MAX_AUDIO_BYTES` / timeouts are not failing — see [Environment](/environment).
+
+## `DUPLICATE_JOB` (retryable)
+
+- Occurs when a **running or queued** job already exists for the same resource. Poll the existing `jobId` or retry after completion/failure.
+
+## `JOB_NOT_FOUND`
+
+- Wrong `jobId`, or old job files were removed. Start a new `extract_content` job.
+
+## `INVALID_CURSOR` / `INVALID_RANGE`
+
+- Cursors are tied to a specific `resourceId` and language. If you changed URL or resource, call `get_transcript` / `get_timed_transcript` from the start.
+- For `get_transcript_range`, `endMs < startMs` returns `INVALID_RANGE`.
+
+## yt-dlp / `YTDLP_TIMEOUT`
+
+- Timeouts can happen due to network, region, or long videos. Increase `YTDLP_TIMEOUT_MS` and check worker logs (e.g. `docker compose logs -f worker`).
+
+## `list_available_languages` fails with only `resourceId`
+
+- You need either `resourceId` **or** a supported video **`url`**. The stored resource’s `sourceUrl` should be a Watch/Shorts URL.

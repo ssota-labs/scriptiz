@@ -1,0 +1,86 @@
+---
+title: Extraction & status
+description: extract_content, get_extraction_status, extract_playlist, extract_channel_latest, list_available_languages
+---
+
+Schemas are defined in `packages/mcp-tools/src/schemas.ts`.
+
+## `extract_content`
+
+Enqueues a metadata + caption (or STT) extraction **job** for a YouTube **video** URL.
+
+**Input**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | string | yes | Supported `watch` / Shorts URL |
+| `language` | string | no | Default: server `DEFAULT_TRANSCRIPT_LANGUAGE` / context default |
+| `allowSttFallback` | boolean | no | Use STT when no captions |
+| `forceRefresh` | boolean | no | If `true`, re-queue even when a transcript already exists |
+
+**Success (summary)**  
+`jobId`, `status`, `resourceId`, `alreadyExtracted?`
+
+**Error codes (examples)**  
+`VALIDATION_ERROR`, `UNSUPPORTED_URL`, `DUPLICATE_JOB` (retryable), yt-dlp-related codes
+
+---
+
+## `get_extraction_status`
+
+**Input:** `{ "jobId": string }`
+
+**Success:** `jobId`, `status`, `resourceId?`, `errorCode?`, `errorMessage?`, `updatedAt`  
+**Errors:** `JOB_NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+## `extract_playlist`
+
+Fetches playlist **metadata** and **video item** resources and stores them. It does **not** create an `extract_content` job **per item** (call `extract_content` later for transcripts).
+
+**Input**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `url` | string | Playlist URL |
+| `maxItems` | number | Default 200, max 5000 |
+
+**Success:** `playlistResourceId`, `title`, `itemCount`, `items` (resource array)  
+**Errors:** `UNSUPPORTED_URL`, `PARSE_FAILED`, `VALIDATION_ERROR`, `INTERNAL`, etc.
+
+---
+
+## `extract_channel_latest`
+
+Fetches a channel (or tab) **latest uploads** in a similar way.
+
+**Input:** `url`, `maxItems` (default 20, max 5000)
+
+**Success:** `channelResourceId`, `title`, `items`  
+**Errors:** `UNSUPPORTED_URL`, `PARSE_FAILED`, `VALIDATION_ERROR`
+
+---
+
+## `list_available_languages`
+
+Returns **available caption languages** from `yt-dlp` metadata (useful before saving).
+
+**Input:** `resourceId` **or** `url` (if both, `resourceId` wins)
+
+**Success:** `{ "languages": [ ... ] }`  
+**Errors:** `VALIDATION_ERROR` (neither `resourceId` nor `url`), `NOT_FOUND`, `UNSUPPORTED_URL`
+
+## Common error codes
+
+| Code | Meaning |
+|------|---------|
+| `VALIDATION_ERROR` | Zod validation failed |
+| `NOT_FOUND` | Resource or list missing |
+| `UNSUPPORTED_URL` | YouTube URL shape not supported |
+| `JOB_NOT_FOUND` | Unknown job id |
+| `DUPLICATE_JOB` | Job already in progress for resource |
+| `PARSE_FAILED` | Failed to parse yt-dlp response |
+| `YTDLP_TIMEOUT` / `YTDLP_FAILED` / `VIDEO_UNAVAILABLE` | Extractor / network / availability |
+
+`INTERNAL` and unknown yt-dlp errors may include a detailed `message`.

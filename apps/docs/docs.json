@@ -1,0 +1,71 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Scriptiz MCP",
+  "description": "Self-hosted MCP for YouTube extraction and timed transcripts — official documentation",
+  "colors": {
+    "primary": "#863bff",
+    "light": "#a855f7",
+    "dark": "#6b21a8"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/favicon.svg",
+    "dark": "/favicon.svg"
+  },
+  "contextual": {
+    "display": "header",
+    "options": [
+      "copy",
+      "view",
+      "cursor",
+      "vscode",
+      "mcp",
+      "claude",
+      "chatgpt"
+    ]
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "quickstart",
+              "architecture",
+              "environment"
+            ]
+          },
+          {
+            "group": "Usage",
+            "pages": ["agent-guide", "troubleshooting", "deployment"]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Extraction & status",
+            "pages": ["reference/extraction"]
+          },
+          {
+            "group": "Transcript",
+            "pages": ["reference/transcript"]
+          },
+          {
+            "group": "Lists",
+            "pages": ["reference/lists"]
+          },
+          {
+            "group": "MCP UI",
+            "pages": ["reference/mcp-ui"]
+          }
+        ]
+      }
+    ]
+  }
+}

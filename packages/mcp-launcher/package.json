@@ -1,0 +1,28 @@
+{
+  "name": "@scriptiz/mcp",
+  "version": "0.0.0",
+  "description": "Run Scriptiz MCP server via Docker (worker, yt-dlp, and ffmpeg included). Copy-paste friendly for Cursor and other MCP clients.",
+  "type": "module",
+  "bin": {
+    "scriptiz-mcp": "./bin/scriptiz-mcp.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "scriptiz",
+    "youtube",
+    "transcript",
+    "model-context-protocol"
+  ],
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "start": "node bin/scriptiz-mcp.js"
+  }
+}

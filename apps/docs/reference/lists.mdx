@@ -1,0 +1,50 @@
+---
+title: Lists
+description: create_list, add_resource_to_list, add_playlist_to_list, get_list_contents, list_lists
+---
+
+**List** CRUD and queries backed by the local filesystem.
+
+## `create_list`
+
+**Input:** `name` (string), `description?` (string)
+
+**Success:** `listId`, `name`, `createdAt`
+
+---
+
+## `add_resource_to_list`
+
+**Input:** `listId`, `resourceId`, `note?`
+
+**Success:** `listId`, `itemId`, `resourceId`  
+**Errors:** `NOT_FOUND` (list or resource)
+
+---
+
+## `add_playlist_to_list`
+
+**Input:** `listId`, `playlistResourceId`, `includeItems?` (default `true`)
+
+Adds the playlist resource to the list; when `includeItems` is true and the **playlist URL** is valid, also tries to add each **video** as a resource and list item.
+
+**Errors:** `NOT_FOUND` (list or playlist), `UNSUPPORTED_URL` (playlist `sourceUrl` not supported), yt-dlp errors
+
+**Success:** `listId`, `playlistItemId`, `itemsAdded`
+
+---
+
+## `get_list_contents`
+
+**Input:** `{ "listId": string }`
+
+**Success:** `list`, `items` — each `items` entry is `{ item, resource }` (resource may be null if missing)  
+**Errors:** `NOT_FOUND`
+
+---
+
+## `list_lists`
+
+**Input:** `{}` (empty object)
+
+**Success:** `{ "lists": [ { "id", "name", "updatedAt" }, ... ] }`
