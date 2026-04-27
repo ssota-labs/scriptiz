@@ -17,4 +17,9 @@ export interface TranscriptStorePort {
     body: string,
     format?: RawSubtitleFormat,
   ): Promise<string>;
+
+  /**
+   * `transcripts/{resourceId}/*.json` 기준, 언어 코드 목록(파일 stem).
+   */
+  listTranscriptLanguageCodes(resourceId: string): Promise<string[]>;
 }

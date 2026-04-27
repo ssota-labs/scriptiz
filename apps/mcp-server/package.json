@@ -13,5 +13,10 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@scriptiz/mcp-tools": "workspace:*",
+    "zod": "^3.24.0"
   }
 }

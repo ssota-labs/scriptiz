@@ -87,3 +87,131 @@ export function mapVideoDumpToResource(
   };
   return { resource, youtubeId: id };
 }
+
+const ID_LOOSE = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * playlist / flat playlist entry가 아닌 단일 video 엔트리(메타가 일부만 있어도 됨).
+ */
+export function mapVideoEntryToResource(
+  entry: unknown,
+  nowIso: string,
+): { resource: Resource; youtubeId: string } {
+  if (!entry || typeof entry !== "object") {
+    throw new YtDlpError("PARSE_FAILED", "video entry: not an object");
+  }
+  const o = entry as Record<string, unknown>;
+  const id = o.id;
+  if (typeof id !== "string" || !ID_LOOSE.test(id)) {
+    throw new YtDlpError("PARSE_FAILED", "video entry: missing id");
+  }
+  const title =
+    typeof o.title === "string" && o.title.length
+      ? o.title
+      : "YouTube video";
+  const web = o.webpage_url ?? o.url;
+  const sourceUrl =
+    typeof web === "string" && web.length
+      ? web
+      : `https://www.youtube.com/watch?v=${id}`;
+  const uploader = typeof o.uploader === "string" ? o.uploader : undefined;
+  const ch = o.channel_id ?? o.uploader_id;
+  const ownerSourceId =
+    typeof ch === "string" && ch.length ? ch : undefined;
+  const duration =
+    typeof o.duration === "number" && o.duration >= 0
+      ? Math.floor(o.duration)
+      : undefined;
+  const pub = o.upload_date ?? o.release_date;
+  const resource: Resource = {
+    id: makeResourceId("video", id),
+    type: "video",
+    platform: "youtube",
+    sourceUrl,
+    sourceId: id,
+    title,
+    description:
+      typeof o.description === "string" ? o.description : undefined,
+    ownerName: uploader,
+    ownerSourceId,
+    durationSeconds: duration,
+    thumbnailUrl: pickThumb(o),
+    publishedAt: uploadDateToIso(pub) ?? undefined,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  return { resource, youtubeId: id };
+}
+
+export function mapPlaylistRootToResource(
+  dump: unknown,
+  nowIso: string,
+): { resource: Resource; playlistId: string } {
+  if (!dump || typeof dump !== "object") {
+    throw new YtDlpError("PARSE_FAILED", "playlist dump: not an object");
+  }
+  const o = dump as Record<string, unknown>;
+  const id = o.id;
+  if (typeof id !== "string" || !ID_LOOSE.test(id)) {
+    throw new YtDlpError("PARSE_FAILED", "playlist dump: invalid id");
+  }
+  const title =
+    typeof o.title === "string" && o.title.length ? o.title : "Playlist";
+  const web = o.webpage_url ?? o.webpage;
+  const sourceUrl =
+    typeof web === "string" && web.length
+      ? web
+      : `https://www.youtube.com/playlist?list=${id}`;
+  const resource: Resource = {
+    id: makeResourceId("playlist", id),
+    type: "playlist",
+    platform: "youtube",
+    sourceUrl,
+    sourceId: id,
+    title,
+    description: typeof o.description === "string" ? o.description : undefined,
+    ownerName: typeof o.uploader === "string" ? o.uploader : undefined,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  return { resource, playlistId: id };
+}
+
+export function mapChannelRootToResource(
+  dump: unknown,
+  nowIso: string,
+  inputUrl: string,
+): { resource: Resource; channelId: string } {
+  if (!dump || typeof dump !== "object") {
+    throw new YtDlpError("PARSE_FAILED", "channel dump: not an object");
+  }
+  const o = dump as Record<string, unknown>;
+  const entries = o.entries;
+  const first = Array.isArray(entries) && entries[0] ? (entries[0] as Record<string, unknown>) : null;
+  const ch =
+    (typeof o.channel_id === "string" && o.channel_id) ||
+    (first && typeof first.channel_id === "string" && first.channel_id) ||
+    (typeof o.id === "string" ? o.id : "");
+  if (!ch || !ID_LOOSE.test(ch)) {
+    throw new YtDlpError("PARSE_FAILED", "channel dump: could not determine channel_id");
+  }
+  const title =
+    typeof o.title === "string" && o.title.length
+      ? o.title
+      : typeof o.uploader === "string"
+        ? o.uploader
+        : "YouTube channel";
+  const resource: Resource = {
+    id: makeResourceId("channel", ch),
+    type: "channel",
+    platform: "youtube",
+    sourceUrl: inputUrl,
+    sourceId: ch,
+    title,
+    description: typeof o.description === "string" ? o.description : undefined,
+    ownerName: typeof o.uploader === "string" ? o.uploader : undefined,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  return { resource, channelId: ch };
+}

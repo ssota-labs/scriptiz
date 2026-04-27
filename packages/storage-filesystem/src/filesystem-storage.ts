@@ -123,6 +123,18 @@ export class FilesystemStorage
     return rawSubtitleRelative(resourceId, language, format);
   }
 
+  async listTranscriptLanguageCodes(resourceId: string): Promise<string[]> {
+    const root = path.join(this.dataRoot, "transcripts", resourceId);
+    if (!(await fileExists(root))) {
+      return [];
+    }
+    const files = await readdir(root);
+    return files
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.replace(/\.json$/, ""))
+      .sort();
+  }
+
   /* ListStorePort */
 
   async getListById(id: string): Promise<UserList | null> {

@@ -3,6 +3,7 @@ import { runYtDlp, ytdlpFailed } from "./run-ytdlp.js";
 import { YtDlpError } from "./ytdlp-error.js";
 import { findVttFiles } from "./find-vtt.js";
 import { captionSourceFromTrack } from "./subtitle-lang.js";
+import { parseDumpJsonLines } from "./parse-dump-json.js";
 
 export class YtDlpExtractor implements ExtractorPort {
   constructor(
@@ -14,19 +15,37 @@ export class YtDlpExtractor implements ExtractorPort {
   }
 
   async getYoutubeMetadataDump(url: string): Promise<unknown> {
-    const r = await runYtDlp(
-      this.binary(),
-      ["--no-warnings", "--dump-json", "--skip-download"],
-      url,
-    );
+    return this.getMetadataDump(url);
+  }
+
+  /**
+   * `--dump-json` 결과. NDJSON(playlist 등)이면 첫 줄/첫 객체만 아닌 **전체** 파싱이 필요할 때 사용.
+   */
+  async getMetadataDumpLines(
+    url: string,
+    options?: { playlistEnd?: number },
+  ): Promise<unknown[]> {
+    const before = ["--no-warnings", "--dump-json", "--skip-download"];
+    if (options?.playlistEnd != null) {
+      before.push("--playlist-end", String(options.playlistEnd));
+    }
+    const r = await runYtDlp(this.binary(), before, url);
     if (r.exitCode !== 0) {
       throw ytdlpFailed({ stderr: r.stderr, exitCode: r.exitCode });
     }
-    try {
-      return JSON.parse(r.stdout) as unknown;
-    } catch {
-      throw new YtDlpError("PARSE_FAILED", "yt-dlp did not return valid JSON");
+    const lines = parseDumpJsonLines(r.stdout);
+    if (lines.length === 0) {
+      throw new YtDlpError("PARSE_FAILED", "yt-dlp returned empty dump");
     }
+    return lines;
+  }
+
+  async getMetadataDump(
+    url: string,
+    options?: { playlistEnd?: number },
+  ): Promise<unknown> {
+    const lines = await this.getMetadataDumpLines(url, options);
+    return lines[0];
   }
 
   async writeSubtitleVtt(
