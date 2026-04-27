@@ -16,10 +16,11 @@
 ### Patch Changes
 
 - Updated dependencies [3533955]
-  - @scriptiz/core@0.1.0
-  - @scriptiz/extractor-ytdlp@0.1.0
-  - @scriptiz/mcp-ui@0.1.0
-  - @scriptiz/ports@0.1.0
-  - @scriptiz/queue-local@0.1.0
-  - @scriptiz/schemas@0.1.0
-  - @scriptiz/storage-filesystem@0.1.0
+  - @scriptiz/[core@0.1.0](mailto:core@0.1.0)
+  - @scriptiz/[extractor-ytdlp@0.1.0](mailto:extractor-ytdlp@0.1.0)
+  - @scriptiz/[mcp-ui@0.1.0](mailto:mcp-ui@0.1.0)
+  - @scriptiz/[ports@0.1.0](mailto:ports@0.1.0)
+  - @scriptiz/[queue-local@0.1.0](mailto:queue-local@0.1.0)
+  - @scriptiz/[schemas@0.1.0](mailto:schemas@0.1.0)
+  - @scriptiz/[storage-filesystem@0.1.0](mailto:storage-filesystem@0.1.0)
+
