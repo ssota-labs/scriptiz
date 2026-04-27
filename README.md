@@ -409,7 +409,6 @@ When adding a feature:
 Near term:
 
 - Add more fixture-based integration coverage.
-- Publish `@scriptiz/mcp` and the all-in-one image to npm/GHCR (see [docs/MCP_RELEASE.md](docs/MCP_RELEASE.md)).
 - Keep `apps/mcp-ui-web` README aligned with Scriptiz.
 
 Open-source MCP:

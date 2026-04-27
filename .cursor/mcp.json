@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "scriptiz": {
+      "command": "npx",
+      "args": ["-y", "@scriptiz/mcp"],
+      "env": {
+        "DEFAULT_TRANSCRIPT_LANGUAGE": "ko"
+      }
+    }
+  }
+}

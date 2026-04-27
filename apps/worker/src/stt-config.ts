@@ -1,26 +1,40 @@
 export type SttProviderKind = "openai" | "xai";
 
+export type SttResolveResult =
+  | { kind: "ready"; provider: SttProviderKind; apiKey: string }
+  | { kind: "invalid_provider"; raw: string }
+  | { kind: "missing_api_key"; provider: SttProviderKind }
+  | { kind: "no_api_key_available" };
+
 /**
- * `STT_PROVIDER=openai|xai`가 있으면 해당 키만 사용.
- * 없으면 `OPENAI_API_KEY` → 없으면 `XAI_API_KEY` 순.
+ * Resolves STT provider and API key from env.
+ *
+ * - `STT_PROVIDER=openai|xai` forces that provider (requires matching key).
+ * - Unset `STT_PROVIDER`: prefer `OPENAI_API_KEY`, then `XAI_API_KEY`.
+ * - Any other `STT_PROVIDER` value → `invalid_provider`.
  */
-export function resolveSttProvider(env: NodeJS.ProcessEnv): {
-  provider: SttProviderKind;
-  apiKey: string;
-} | null {
-  const explicit = env.STT_PROVIDER?.trim().toLowerCase();
+export function resolveSttProvider(env: NodeJS.ProcessEnv): SttResolveResult {
+  const raw = env.STT_PROVIDER?.trim();
+  const explicit = raw?.toLowerCase();
   const openai = env.OPENAI_API_KEY?.trim();
   const xai = env.XAI_API_KEY?.trim();
 
+  if (raw && explicit !== "openai" && explicit !== "xai") {
+    return { kind: "invalid_provider", raw };
+  }
+
   if (explicit === "openai") {
-    return openai ? { provider: "openai", apiKey: openai } : null;
+    return openai
+      ? { kind: "ready", provider: "openai", apiKey: openai }
+      : { kind: "missing_api_key", provider: "openai" };
   }
   if (explicit === "xai") {
-    return xai ? { provider: "xai", apiKey: xai } : null;
+    return xai
+      ? { kind: "ready", provider: "xai", apiKey: xai }
+      : { kind: "missing_api_key", provider: "xai" };
   }
-  if (!explicit) {
-    if (openai) return { provider: "openai", apiKey: openai };
-    if (xai) return { provider: "xai", apiKey: xai };
-  }
-  return null;
+
+  if (openai) return { kind: "ready", provider: "openai", apiKey: openai };
+  if (xai) return { kind: "ready", provider: "xai", apiKey: xai };
+  return { kind: "no_api_key_available" };
 }

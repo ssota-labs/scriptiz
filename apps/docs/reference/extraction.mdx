@@ -82,5 +82,7 @@ Returns **available caption languages** from `yt-dlp` metadata (useful before sa
 | `DUPLICATE_JOB` | Job already in progress for resource |
 | `PARSE_FAILED` | Failed to parse yt-dlp response |
 | `YTDLP_TIMEOUT` / `YTDLP_FAILED` / `VIDEO_UNAVAILABLE` | Extractor / network / availability |
+| `STT_PROVIDER_INVALID` / `STT_API_KEY_MISSING` | STT env / keys misconfigured when captions are missing and STT fallback runs |
+| `STT_FILE_TOO_LARGE` / `STT_TIMEOUT` / `STT_HTTP_ERROR` | STT audio limit, request timeout, or provider HTTP error |
 
 `INTERNAL` and unknown yt-dlp errors may include a detailed `message`.

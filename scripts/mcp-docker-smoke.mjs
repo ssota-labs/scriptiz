@@ -8,6 +8,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import process from "node:process";
+import { setTimeout as delay } from "node:timers/promises";
 
 const REQUIRED_TOOLS = [
   "extract_content",
@@ -30,7 +31,7 @@ function logErr(...args) {
 }
 
 function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+  return delay(ms);
 }
 
 function parseToolJson(result) {
@@ -74,7 +75,7 @@ async function main() {
   const lang =
     process.env.DEFAULT_TRANSCRIPT_LANGUAGE?.trim() ||
     process.env.DEFAULT_LANGUAGE?.trim() ||
-    "ko";
+    "en";
   const jobTimeoutMs = Number(
     process.env.DOCKER_SMOKE_JOB_TIMEOUT_MS ?? 300_000,
   );

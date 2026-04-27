@@ -42,7 +42,7 @@ Launcher-only (not forwarded):
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `SCRIPTIZ_DOCKER_IMAGE` | `ghcr.io/scriptiz/scriptiz-mcp:latest` | Image to run |
+| `SCRIPTIZ_DOCKER_IMAGE` | `ghcr.io/ssota-labs/scriptiz-mcp:latest` | Image to run |
 | `SCRIPTIZ_DOCKER_VOLUME` | `scriptiz-data` | Named Docker volume for `/app/data` |
 | `SCRIPTIZ_DATA_DIR` | (unset) | Host path bind-mounted to `/app/data` instead of named volume |
 | `SCRIPTIZ_DOCKER_PULL` | `missing` | `always` / `missing` / `never` → Docker `--pull` |

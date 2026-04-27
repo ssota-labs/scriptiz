@@ -19,6 +19,18 @@ description: Captions, STT, jobs, Docker volumes, and the queue
 - Confirm the `extract_content` job is `completed` via `get_extraction_status`.
 - If there are no captions and **`allowSttFallback: false`**, STT is not used. Check the worker has `STT_PROVIDER` and API keys, and that `STT_MAX_AUDIO_BYTES` / timeouts are not failing — see [Environment](/environment).
 
+## STT job failures (`get_extraction_status`)
+
+When `allowSttFallback: true` and there are no captions, the worker may fail during STT. Typical `errorCode` values:
+
+| Code | What to do |
+|------|------------|
+| `STT_PROVIDER_INVALID` | Set `STT_PROVIDER` to `openai` or `xai` only (or unset for auto key selection). |
+| `STT_API_KEY_MISSING` | Set `OPENAI_API_KEY` and/or `XAI_API_KEY` to match `STT_PROVIDER`, or leave `STT_PROVIDER` unset to pick the first available key. |
+| `STT_FILE_TOO_LARGE` | Audio exceeds `STT_MAX_AUDIO_BYTES` (default 25 MiB). Increase the limit or use a shorter video / lower bitrate source. |
+| `STT_TIMEOUT` | Increase `STT_TIMEOUT_MS` or retry if the provider was slow. |
+| `STT_HTTP_ERROR` | Provider returned a non-2xx response; `errorMessage` may include a short body snippet (e.g. quota, auth). |
+
 ## `DUPLICATE_JOB` (retryable)
 
 - Occurs when a **running or queued** job already exists for the same resource. Poll the existing `jobId` or retry after completion/failure.

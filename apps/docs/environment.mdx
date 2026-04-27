@@ -11,7 +11,7 @@ These variables control **how** the launcher invokes Docker. They are **not** pa
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SCRIPTIZ_DOCKER_IMAGE` | `ghcr.io/scriptiz/scriptiz-mcp:latest` | Image to run |
+| `SCRIPTIZ_DOCKER_IMAGE` | `ghcr.io/ssota-labs/scriptiz-mcp:latest` | Image to run |
 | `SCRIPTIZ_DOCKER_VOLUME` | `scriptiz-data` | Docker **named** volume mounted at `/app/data` |
 | `SCRIPTIZ_DATA_DIR` | (unset) | If set, **bind-mount** this host path to `/app/data` instead of using a named volume |
 | `SCRIPTIZ_DOCKER_PULL` | `missing` | `always`, `missing`, or `never` → passed to `docker run --pull` |

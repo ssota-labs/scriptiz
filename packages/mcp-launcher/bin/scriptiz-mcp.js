@@ -38,7 +38,7 @@ function checkDocker() {
 function buildDockerArgs() {
   const image =
     process.env.SCRIPTIZ_DOCKER_IMAGE?.trim() ||
-    "ghcr.io/scriptiz/scriptiz-mcp:latest";
+    "ghcr.io/ssota-labs/scriptiz-mcp:latest";
   const pullRaw = (process.env.SCRIPTIZ_DOCKER_PULL || "missing").toLowerCase();
   const pullFlag =
     pullRaw === "always"

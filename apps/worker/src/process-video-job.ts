@@ -8,8 +8,18 @@ import {
   YtDlpError,
   YtDlpExtractor,
 } from "@scriptiz/extractor-ytdlp";
-import { SttFileTooLargeError as SttTooLargeOai, transcribeWithOpenAI } from "@scriptiz/stt-openai";
-import { SttFileTooLargeError as SttTooLargeXai, transcribeWithXai } from "@scriptiz/stt-xai";
+import {
+  SttFileTooLargeError as SttTooLargeOai,
+  SttHttpError as SttHttpOai,
+  SttTimeoutError as SttTimeoutOai,
+  transcribeWithOpenAI,
+} from "@scriptiz/stt-openai";
+import {
+  SttFileTooLargeError as SttTooLargeXai,
+  SttHttpError as SttHttpXai,
+  SttTimeoutError as SttTimeoutXai,
+  transcribeWithXai,
+} from "@scriptiz/stt-xai";
 import type { ExtractionJob, Transcript } from "@scriptiz/schemas";
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
@@ -17,6 +27,24 @@ import { resolveSttProvider } from "./stt-config.js";
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function mapSttFailure(e: unknown): { code: string; message: string } | null {
+  if (e instanceof SttTooLargeOai || e instanceof SttTooLargeXai) {
+    return { code: "STT_FILE_TOO_LARGE", message: e.message };
+  }
+  if (e instanceof SttHttpOai || e instanceof SttHttpXai) {
+    const snippet = e.responseBody.trim().slice(0, 500);
+    const detail = snippet ? ` — ${snippet}` : "";
+    return {
+      code: "STT_HTTP_ERROR",
+      message: `${e.message}${detail}`,
+    };
+  }
+  if (e instanceof SttTimeoutOai || e instanceof SttTimeoutXai) {
+    return { code: "STT_TIMEOUT", message: e.message };
+  }
+  return null;
 }
 
 export async function processVideoExtractionJob(input: {
@@ -69,13 +97,38 @@ export async function processVideoExtractionJob(input: {
         return;
       }
       const stt = resolveSttProvider(process.env);
-      if (!stt) {
+      if (stt.kind === "invalid_provider") {
+        const failed: ExtractionJob = {
+          ...job,
+          status: "failed",
+          errorCode: "STT_PROVIDER_INVALID",
+          errorMessage: `STT_PROVIDER must be openai or xai (got: ${stt.raw})`,
+          updatedAt: nowIso(),
+        };
+        await queue.moveToFailed(job.id, failed);
+        return;
+      }
+      if (stt.kind === "missing_api_key") {
         const failed: ExtractionJob = {
           ...job,
           status: "failed",
           errorCode: "STT_API_KEY_MISSING",
           errorMessage:
-            "STT fallback requested but no provider: set STT_PROVIDER and OPENAI_API_KEY or XAI_API_KEY",
+            stt.provider === "openai"
+              ? "OPENAI_API_KEY is required when STT_PROVIDER=openai"
+              : "XAI_API_KEY is required when STT_PROVIDER=xai",
+          updatedAt: nowIso(),
+        };
+        await queue.moveToFailed(job.id, failed);
+        return;
+      }
+      if (stt.kind === "no_api_key_available") {
+        const failed: ExtractionJob = {
+          ...job,
+          status: "failed",
+          errorCode: "STT_API_KEY_MISSING",
+          errorMessage:
+            "STT fallback requested but no API key: set OPENAI_API_KEY or XAI_API_KEY (optional: STT_PROVIDER=openai|xai)",
           updatedAt: nowIso(),
         };
         await queue.moveToFailed(job.id, failed);
@@ -166,13 +219,25 @@ export async function processVideoExtractionJob(input: {
     };
     await queue.moveToCompleted(job.id, done);
   } catch (e) {
+    const stt = mapSttFailure(e);
+    if (stt) {
+      const latest = await queue.getJobById(job.id);
+      const base = latest ?? job;
+      const failed: ExtractionJob = {
+        ...base,
+        status: "failed",
+        errorCode: stt.code,
+        errorMessage: stt.message,
+        updatedAt: nowIso(),
+      };
+      await queue.moveToFailed(base.id, failed);
+      return;
+    }
     const code = e instanceof YtDlpError
       ? e.code
-      : e instanceof SttTooLargeOai || e instanceof SttTooLargeXai
-        ? "STT_FILE_TOO_LARGE"
-        : e instanceof Error
-        ? "EXTRACT_ERROR"
-        : "UNKNOWN";
+      : e instanceof Error
+      ? "EXTRACT_ERROR"
+      : "UNKNOWN";
     const message = e instanceof Error ? e.message : String(e);
     const latest = await queue.getJobById(job.id);
     const base = latest ?? job;
