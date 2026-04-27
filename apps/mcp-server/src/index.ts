@@ -1,6 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { defaultScriptizDataDir } from "@scriptiz/core";
 import { createServer } from "node:http";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 import { createScriptizMcpContext, runScriptizTool } from "@scriptiz/mcp-tools";
 import { z } from "zod";
 import * as schemas from "@scriptiz/mcp-tools";
@@ -9,10 +12,7 @@ export const appName = "@scriptiz/mcp-server" as const;
 
 function dataDirFromEnv(): string {
   const raw = process.env.DATA_DIR?.trim();
-  if (!raw) {
-    throw new Error("DATA_DIR environment variable is required");
-  }
-  return raw;
+  return raw ? path.resolve(raw) : defaultScriptizDataDir();
 }
 
 function jsonResult(payload: unknown) {
@@ -72,6 +72,7 @@ function startHealthCheckIfConfigured() {
 
 async function main() {
   const dataDir = dataDirFromEnv();
+  await mkdir(dataDir, { recursive: true });
   startHealthCheckIfConfigured();
   const ctx = createScriptizMcpContext({ dataDir });
 

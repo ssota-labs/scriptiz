@@ -1,3 +1,4 @@
+export { defaultScriptizDataDir } from "./default-data-dir.js";
 export { makeResourceId, makeTranscriptId } from "./resource-id.js";
 export {
   decodeTranscriptCursor,

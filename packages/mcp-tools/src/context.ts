@@ -1,3 +1,4 @@
+import { defaultScriptizDataDir } from "@scriptiz/core";
 import type {
   ExtractorPort,
   JobQueuePort,
@@ -18,10 +19,11 @@ export type ScriptizMcpContext = {
 };
 
 export function createScriptizMcpContext(
-  input: { dataDir: string; defaultLanguage?: string },
+  input: { dataDir?: string; defaultLanguage?: string },
 ): ScriptizMcpContext {
+  const dataDir = input.dataDir?.trim() || defaultScriptizDataDir();
   return {
-    dataDir: input.dataDir,
+    dataDir,
     defaultLanguage: (() => {
       const fromInput = input.defaultLanguage?.trim();
       if (fromInput) {
@@ -33,8 +35,8 @@ export function createScriptizMcpContext(
         "en"
       );
     })(),
-    storage: new FilesystemStorage(input.dataDir),
-    queue: new LocalJobQueue(input.dataDir),
+    storage: new FilesystemStorage(dataDir),
+    queue: new LocalJobQueue(dataDir),
     extractor: new YtDlpExtractor(),
   };
 }

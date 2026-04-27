@@ -1,7 +1,9 @@
+import { defaultScriptizDataDir } from "@scriptiz/core";
 import { YtDlpExtractor } from "@scriptiz/extractor-ytdlp";
 import { LocalJobQueue } from "@scriptiz/queue-local";
 import { FilesystemStorage } from "@scriptiz/storage-filesystem";
 import type { ExtractionJob } from "@scriptiz/schemas";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { processVideoExtractionJob } from "./process-video-job.js";
@@ -61,9 +63,10 @@ export async function runWorkerLoop(
 }
 
 export async function main() {
-  const dataDir = process.env.DATA_DIR
+  const dataDir = process.env.DATA_DIR?.trim()
     ? path.resolve(process.env.DATA_DIR)
-    : path.join(process.cwd(), "data");
+    : defaultScriptizDataDir();
+  await mkdir(dataDir, { recursive: true });
   const pollIntervalMs = Number(
     process.env.WORKER_POLL_INTERVAL_MS ?? 2000,
   );
