@@ -8,6 +8,9 @@ export type ToolErrorBody = {
   };
 };
 
+/** 도구 핸들러 공통: 성공 시 객체(플랜 `ok: false` 래핑은 사용하지 않음) */
+export type ToolResult = Record<string, unknown> | ToolErrorBody;
+
 export function toolErr(
   code: string,
   message: string,

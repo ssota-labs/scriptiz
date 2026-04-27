@@ -19,4 +19,9 @@ export {
 } from "./handlers.js";
 export * from "./schemas.js";
 export { toolErr, toolOk } from "./tool-result.js";
-export type { ToolErrorBody } from "./tool-result.js";
+export type { ToolErrorBody, ToolResult } from "./tool-result.js";
+export {
+  handleGetJobStatusView,
+  handleGetListView,
+  handleGetVideoTranscriptView,
+} from "./ui-handlers.js";

@@ -91,6 +91,9 @@ importers:
       '@scriptiz/extractor-ytdlp':
         specifier: workspace:*
         version: link:../extractor-ytdlp
+      '@scriptiz/mcp-ui':
+        specifier: workspace:*
+        version: link:../mcp-ui
       '@scriptiz/ports':
         specifier: workspace:*
         version: link:../ports
@@ -107,7 +110,14 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
 
-  packages/mcp-ui: {}
+  packages/mcp-ui:
+    dependencies:
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
 
   packages/ports:
     dependencies:

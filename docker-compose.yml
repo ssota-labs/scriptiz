@@ -1,0 +1,35 @@
+# M5: 공유 `data` 볼륨. MCP는 컨테이너에선 stdio가 닫혀 `SCRIPTIZ_MCP_START_STDIO=0` + 헬스만 켤 수 있음.
+# 로컬에서 같은 DATA_DIR로 MCP 서버를 띄워 도구 + MCP UI payload를 쓰는 흐름을 권장.
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    environment:
+      DATA_DIR: /app/data
+      DEFAULT_TRANSCRIPT_LANGUAGE: ${DEFAULT_TRANSCRIPT_LANGUAGE:-ko}
+      HEALTH_CHECK_PORT: "8080"
+      # Docker detached 환경에서 stdio 없을 때
+      SCRIPTIZ_MCP_START_STDIO: "0"
+    ports:
+      - "8080:8080"
+    volumes:
+      - scriptiz_data:/app/data
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    environment:
+      DATA_DIR: /app/data
+      DEFAULT_TRANSCRIPT_LANGUAGE: ${DEFAULT_TRANSCRIPT_LANGUAGE:-ko}
+      WORKER_POLL_INTERVAL_MS: ${WORKER_POLL_INTERVAL_MS:-2000}
+    volumes:
+      - scriptiz_data:/app/data
+    depends_on:
+      - mcp-server
+    restart: unless-stopped
+
+volumes:
+  scriptiz_data:

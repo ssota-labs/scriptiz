@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/dist
+.git
+.github
+.vscode
+docs
+**/*.md
+.env
+**/.env.*
+coverage
+.turbo
+*.log
+.DS_Store
+terminals

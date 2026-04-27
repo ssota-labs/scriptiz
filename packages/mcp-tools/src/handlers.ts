@@ -18,14 +18,17 @@ import type {
   ExtractionJob,
   ExtractionJobStatus,
   Resource,
-  Transcript,
   TranscriptSegment,
 } from "@scriptiz/schemas";
 import { randomUUID } from "node:crypto";
 import type { ScriptizMcpContext } from "./context.js";
 import { listLanguageOptionsFromDump } from "./subtitle-list.js";
+import {
+  getTimedTranscriptSlice,
+  loadTranscriptForResource,
+} from "./transcript-internal.js";
 import { toolErr } from "./tool-result.js";
-import type { ToolErrorBody } from "./tool-result.js";
+import type { ToolErrorBody, ToolResult } from "./tool-result.js";
 import {
   addPlaylistToListInput,
   addResourceToListInput,
@@ -43,14 +46,16 @@ import {
   listAvailableLanguagesInput,
 } from "./schemas.js";
 import {
+  handleGetJobStatusView,
+  handleGetListView,
+  handleGetVideoTranscriptView,
+} from "./ui-handlers.js";
+import {
   ensureChannelVideosUrl,
   isLikelyChannelTabUrl,
   isLikelyPlaylistUrl,
   parseYoutubeVideoId,
 } from "./youtube-url.js";
-
-type Ok = Record<string, unknown>;
-type ToolResult = Ok | ToolErrorBody;
 
 function nowIso() {
   return new Date().toISOString();
@@ -193,30 +198,6 @@ export async function handleGetContent(
   };
 }
 
-async function loadTranscriptForResource(
-  ctx: ScriptizMcpContext,
-  resourceId: string,
-  language: string | undefined,
-): Promise<
-  { tr: Transcript; language: string } | { error: ToolErrorBody }
-> {
-  const langs = await ctx.storage.listTranscriptLanguageCodes(resourceId);
-  if (langs.length === 0) {
-    return { error: toolErr("NO_TRANSCRIPT", "No transcript for this resource", false) };
-  }
-  const lang =
-    language && langs.includes(language)
-      ? language
-      : langs.includes(ctx.defaultLanguage)
-        ? ctx.defaultLanguage
-        : langs[0]!;
-  const tr = await ctx.storage.getTranscript(resourceId, lang);
-  if (!tr) {
-    return { error: toolErr("NO_TRANSCRIPT", "Transcript not found for language", false) };
-  }
-  return { tr, language: lang };
-}
-
 export async function handleGetTranscript(
   ctx: ScriptizMcpContext,
   raw: unknown,
@@ -266,44 +247,22 @@ export async function handleGetTimedTranscript(
     return toolErr("VALIDATION_ERROR", parsed.error.message, false);
   }
   const { resourceId, cursor, limit = 100 } = parsed.data;
-  const loaded = await loadTranscriptForResource(
-    ctx,
+  const r = await getTimedTranscriptSlice(ctx, {
     resourceId,
-    parsed.data.language,
-  );
-  if ("error" in loaded) {
-    return loaded.error;
+    language: parsed.data.language,
+    cursor,
+    limit,
+  });
+  if ("error" in r) {
+    return r.error;
   }
-  const { tr, language } = loaded;
-  let start = 0;
-  if (cursor) {
-    try {
-      const c = decodeTranscriptCursor(cursor);
-      if (c.resourceId !== resourceId || c.language !== language) {
-        return toolErr("INVALID_CURSOR", "Cursor does not match resource/language", false);
-      }
-      start = c.nextIndex;
-    } catch (e) {
-      return toolErr(
-        "INVALID_CURSOR",
-        e instanceof Error ? e.message : "Bad cursor",
-        false,
-      );
-    }
-  }
-  const all = tr.segments;
-  const slice = all.slice(start, start + limit);
   const out: Record<string, unknown> = {
-    resourceId,
-    language,
-    segments: slice,
+    resourceId: r.resourceId,
+    language: r.language,
+    segments: r.segments,
   };
-  if (start + slice.length < all.length) {
-    out.nextCursor = encodeTranscriptCursor({
-      resourceId,
-      language,
-      nextIndex: start + slice.length,
-    });
+  if (r.nextCursor) {
+    out.nextCursor = r.nextCursor;
   }
   return out;
 }
@@ -748,6 +707,15 @@ export async function runScriptizTool(
       break;
     case "list_lists":
       r = await handleListLists(ctx, args);
+      break;
+    case "get_video_transcript_view":
+      r = await handleGetVideoTranscriptView(ctx, args);
+      break;
+    case "get_list_view":
+      r = await handleGetListView(ctx, args);
+      break;
+    case "get_job_status_view":
+      r = await handleGetJobStatusView(ctx, args);
       break;
     default:
       r = toolErr("UNKNOWN_TOOL", `Unknown tool: ${name}`, false);

@@ -17,6 +17,7 @@
   "dependencies": {
     "@scriptiz/core": "workspace:*",
     "@scriptiz/extractor-ytdlp": "workspace:*",
+    "@scriptiz/mcp-ui": "workspace:*",
     "@scriptiz/ports": "workspace:*",
     "@scriptiz/queue-local": "workspace:*",
     "@scriptiz/schemas": "workspace:*",

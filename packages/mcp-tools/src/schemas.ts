@@ -79,3 +79,15 @@ export const addPlaylistToListInput = z.object({
 export const getListContentsInput = z.object({
   listId: z.string().min(1),
 });
+
+/** MCP UI: `video_transcript_view` — timed segments 페이지 (기본 limit 넉넉히) */
+export const getVideoTranscriptViewInput = z.object({
+  resourceId: z.string().min(1),
+  language: z.string().min(1).optional(),
+  cursor: z.string().optional(),
+  limit: z.number().int().positive().max(2000).optional(),
+});
+
+export const getListViewInput = z.object({
+  listId: z.string().min(1),
+});

@@ -22,7 +22,17 @@ export function createScriptizMcpContext(
 ): ScriptizMcpContext {
   return {
     dataDir: input.dataDir,
-    defaultLanguage: input.defaultLanguage ?? "en",
+    defaultLanguage: (() => {
+      const fromInput = input.defaultLanguage?.trim();
+      if (fromInput) {
+        return fromInput;
+      }
+      return (
+        process.env.DEFAULT_TRANSCRIPT_LANGUAGE?.trim() ||
+        process.env.DEFAULT_LANGUAGE?.trim() ||
+        "en"
+      );
+    })(),
     storage: new FilesystemStorage(input.dataDir),
     queue: new LocalJobQueue(input.dataDir),
     extractor: new YtDlpExtractor(),
