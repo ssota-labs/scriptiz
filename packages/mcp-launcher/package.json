@@ -21,6 +21,9 @@
     "model-context-protocol"
   ],
   "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
     "start": "node bin/scriptiz-mcp.js"
