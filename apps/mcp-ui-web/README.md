@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# MCP UI Web (Scriptiz)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Local **demo app** for rendering [MCP UI](https://spec.modelcontextprotocol.io/specification/2025-06-18/client/resources#user-interaction) payloads produced by Scriptiz (`get_video_transcript_view`, `get_list_view`, `get_job_status_view`). It is **not** the production MCP server; it helps validate `@scriptiz/mcp-ui` schemas and layout during development.
 
-Currently, two official plugins are available:
+## Role in the monorepo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Package:** `mcp-ui-web` (private), Vite + React + TypeScript.
+- **Data:** Uses built-in sample payloads and optional JSON paste—no live MCP connection in this app.
+- **Shared types/views:** [`@scriptiz/mcp-ui`](../../packages/mcp-ui) (workspace).
 
-## React Compiler
+See the root [README](../../README.md) (Architecture → `apps/mcp-ui-web`) and product docs in [`apps/docs`](../../apps/docs) for the full Scriptiz story.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run
 
-## Expanding the ESLint configuration
+From the repository root (Node 22+, pnpm as in root `package.json`):
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
+pnpm dev:ui
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Or from this directory:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm dev
 ```
+
+Then open the URL Vite prints (usually `http://localhost:5173`).
+
+## Scripts
+
+| Command   | Description        |
+| --------- | ------------------ |
+| `pnpm dev` | Vite dev server     |
+| `pnpm build` | Production build  |
+| `pnpm preview` | Preview production build |
+| `pnpm lint` | ESLint             |
+
+## Notes
+
+- This UI is a **developer convenience**; end users typically use `npx -y @scriptiz/mcp` and a real MCP client (see root README).
+- To change how payloads look, edit components under `src/mcp-ui/` and types in `packages/mcp-ui` as needed.

@@ -409,7 +409,6 @@ When adding a feature:
 Near term:
 
 - Add more fixture-based integration coverage.
-- Keep `apps/mcp-ui-web` README aligned with Scriptiz.
 
 Open-source MCP:
 
