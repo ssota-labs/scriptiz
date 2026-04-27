@@ -1,0 +1,3 @@
+# M5: worker image (yt-dlp + ffmpeg)
+FROM node:22-alpine
+WORKDIR /app
