@@ -11,6 +11,9 @@ importers:
       '@eslint/js':
         specifier: ^9.17.0
         version: 9.39.4
+      '@scriptiz/extractor-ytdlp':
+        specifier: workspace:*
+        version: link:packages/extractor-ytdlp
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.17
@@ -29,7 +32,26 @@ importers:
 
   apps/mcp-server: {}
 
-  apps/worker: {}
+  apps/worker:
+    dependencies:
+      '@scriptiz/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@scriptiz/extractor-ytdlp':
+        specifier: workspace:*
+        version: link:../../packages/extractor-ytdlp
+      '@scriptiz/ports':
+        specifier: workspace:*
+        version: link:../../packages/ports
+      '@scriptiz/queue-local':
+        specifier: workspace:*
+        version: link:../../packages/queue-local
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+      '@scriptiz/storage-filesystem':
+        specifier: workspace:*
+        version: link:../../packages/storage-filesystem
 
   packages/cache-noop: {}
 
@@ -39,7 +61,17 @@ importers:
         specifier: workspace:*
         version: link:../schemas
 
-  packages/extractor-ytdlp: {}
+  packages/extractor-ytdlp:
+    dependencies:
+      '@scriptiz/core':
+        specifier: workspace:*
+        version: link:../core
+      '@scriptiz/ports':
+        specifier: workspace:*
+        version: link:../ports
+      '@scriptiz/schemas':
+        specifier: workspace:*
+        version: link:../schemas
 
   packages/mcp-tools: {}
 

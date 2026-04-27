@@ -12,6 +12,15 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@scriptiz/core": "workspace:*",
+    "@scriptiz/extractor-ytdlp": "workspace:*",
+    "@scriptiz/ports": "workspace:*",
+    "@scriptiz/queue-local": "workspace:*",
+    "@scriptiz/schemas": "workspace:*",
+    "@scriptiz/storage-filesystem": "workspace:*"
   }
 }
