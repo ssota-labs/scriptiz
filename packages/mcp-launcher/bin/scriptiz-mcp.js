@@ -18,6 +18,7 @@ const FORWARD_ENV_KEYS = [
   "YTDLP_PROXY",
   "STT_TIMEOUT_MS",
   "STT_MAX_AUDIO_BYTES",
+  "SCRIPTIZ_MCP_UI_DIST",
 ];
 
 function logErr(...args) {
