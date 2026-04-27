@@ -5,6 +5,11 @@ export {
   SCRIPTIZ_MCP_SERVER_NAME,
   SCRIPTIZ_MCP_SERVER_VERSION,
 } from "./server-factory.js";
+export {
+  SCRIPTIZ_MCP_APP_RESOURCE_URI,
+  SCRIPTIZ_MCP_APP_TOOL_META,
+} from "./mcp-apps-constants.js";
+export { registerScriptizMcpAppResource } from "./mcp-apps-resources.js";
 export { runScriptizTool } from "./handlers.js";
 export {
   handleAddResourceToList,

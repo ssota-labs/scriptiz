@@ -1,9 +1,14 @@
 ---
 title: MCP UI
-description: get_video_transcript_view, get_list_view, get_job_status_view
+description: get_video_transcript_view, get_list_view, get_job_status_view — JSON tools + MCP Apps (ui://) HTML
 ---
 
-Builds **structured JSON** that clients (e.g. Cursor MCP UI) can **render**, using builders from `packages/mcp-ui`.
+Scriptiz exposes **two related layers**:
+
+1. **Tool results (JSON)** — built with `@scriptiz/mcp-ui` and returned from the tools below. Hosts that only show text/JSON can still use this.
+2. **[MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview)** — tools declare `_meta.ui.resourceUri` → `ui://scriptiz/app`. The MCP server answers `resources/read` with **`text/html`** (placeholder or the Vite build from `apps/mcp-ui-web` when `SCRIPTIZ_MCP_UI_DIST` is set). **ChatGPT** and other hosts render that HTML in a **sandboxed iframe** and use the standard `ui/*` bridge ([OpenAI notes](https://developers.openai.com/apps-sdk/mcp-apps-in-chatgpt)).
+
+For **ChatGPT**, the same URI may also appear as `_meta["openai/outputTemplate"]` (compatibility alias).
 
 ## `get_video_transcript_view`
 
@@ -35,4 +40,7 @@ List + each item’s **resource** and **transcript language** tags.
 | `BUILD_UI_PAYLOAD` | Internal builder threw |
 | `NOT_FOUND` / `JOB_NOT_FOUND` | Resource or job missing |
 
-To try the UI locally, use the demo in `apps/mcp-ui-web`.
+## Local try-out
+
+- **JSON / layout:** `pnpm dev:ui` → demo in `apps/mcp-ui-web` (Vite, no full MCP host required).
+- **MCP Apps iframe:** use a host that implements MCP Apps; build the app and set `SCRIPTIZ_MCP_UI_DIST` to `apps/mcp-ui-web/dist` on the server process. Full `ui/*` integration is tracked as follow-up work.

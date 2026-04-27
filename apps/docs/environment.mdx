@@ -29,6 +29,7 @@ Inside the all-in-one container, `DATA_DIR` is always **`/app/data`**. The MCP p
 | `DEFAULT_TRANSCRIPT_LANGUAGE` | Default caption/transcript language code (e.g. `ko`) |
 | `HEALTH_CHECK_PORT` | If set, serves `/` and `/healthz` with plain text `ok` on `0.0.0.0:port` |
 | `SCRIPTIZ_MCP_START_STDIO` | If `0`/`false`, stdio MCP is off (health only) |
+| `SCRIPTIZ_MCP_UI_DIST` | If set, directory containing `mcp-ui-web`’s Vite **build** (`index.html` + assets). Serves the [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview) `ui://scriptiz/app` **HTML** from `resources/read`. If unset, a minimal placeholder page is used. |
 
 ## Worker (`apps/worker`)
 

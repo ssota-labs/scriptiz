@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ScriptizMcpContext } from "./context.js";
+import { SCRIPTIZ_MCP_APP_TOOL_META } from "./mcp-apps-constants.js";
+import { registerScriptizMcpAppResource } from "./mcp-apps-resources.js";
 import { runScriptizTool } from "./handlers.js";
 import * as schemas from "./schemas.js";
 
@@ -44,12 +46,18 @@ export function registerScriptizTools(
   server: McpServer,
   ctx: ScriptizMcpContext,
 ): void {
-  const reg = (name: string, description: string, input: z.ZodType<unknown>) => {
+  const reg = (
+    name: string,
+    description: string,
+    input: z.ZodType<unknown>,
+    toolMeta?: Record<string, unknown>,
+  ) => {
     server.registerTool(
       name,
       {
         description,
         inputSchema: input,
+        ...(toolMeta ? { _meta: toolMeta } : {}),
       },
       wrapTool(ctx, name),
     );
@@ -120,18 +128,21 @@ export function registerScriptizTools(
   reg("list_lists", "List all saved lists (id, name, updatedAt).", z.object({}));
   reg(
     "get_video_transcript_view",
-    "MCP UI: video + timed transcript payload (YouTube embed + segments).",
+    "MCP UI: video + timed transcript payload (YouTube embed + segments). Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",
     schemas.getVideoTranscriptViewInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_list_view",
-    "MCP UI: list + resources and transcript language tags.",
+    "MCP UI: list + resources and transcript language tags. Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",
     schemas.getListViewInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
   reg(
     "get_job_status_view",
-    "MCP UI: extraction job + optional resource metadata.",
+    "MCP UI: extraction job + optional resource metadata. Hosts with MCP Apps load the HTML from _meta.ui.resourceUri.",
     schemas.jobIdInput,
+    SCRIPTIZ_MCP_APP_TOOL_META,
   );
 }
 
@@ -145,5 +156,6 @@ export function createScriptizMcpServer(ctx: ScriptizMcpContext): McpServer {
     { capabilities: { tools: {} } },
   );
   registerScriptizTools(server, ctx);
+  registerScriptizMcpAppResource(server);
   return server;
 }
