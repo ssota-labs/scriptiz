@@ -1,42 +1,74 @@
+import {
+  registerAppTool,
+  type McpUiAppToolConfig,
+} from "@modelcontextprotocol/ext-apps/server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { ScriptizMcpContext } from "./context.js";
-import { SCRIPTIZ_MCP_APP_TOOL_META } from "./mcp-apps-constants.js";
-import { registerScriptizMcpAppResource } from "./mcp-apps-resources.js";
 import { runScriptizTool } from "./handlers.js";
+import { scriptizToolDescriptorMeta } from "./mcp-apps-constants.js";
+import { registerScriptizMcpAppResource } from "./mcp-apps-resources.js";
 import * as schemas from "./schemas.js";
+import {
+  buildScriptizWidgetView,
+  summarizeToolForModel,
+} from "./tool-structured-result.js";
+import type { ToolErrorBody } from "./tool-result.js";
 
 export const SCRIPTIZ_MCP_SERVER_NAME = "@scriptiz/mcp-server" as const;
 export const SCRIPTIZ_MCP_SERVER_VERSION = "0.0.0" as const;
 
-function jsonResult(payload: unknown) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(payload, null, 0),
-      },
-    ],
-  };
+function isErr(r: unknown): r is ToolErrorBody {
+  return (
+    typeof r === "object" &&
+    r !== null &&
+    "ok" in r &&
+    (r as { ok: boolean }).ok === false
+  );
 }
 
 function wrapTool(ctx: ScriptizMcpContext, name: string) {
   return async (args: unknown) => {
     const out = await runScriptizTool(name, args, ctx);
-    if (
-      typeof out === "object" &&
-      out !== null &&
-      "ok" in out &&
-      (out as { ok: boolean }).ok === false
-    ) {
+    if (isErr(out)) {
       return {
-        ...jsonResult(out),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(out),
+          },
+        ],
         isError: true as const,
       };
     }
-    return jsonResult(out);
+    const payload = out as Record<string, unknown>;
+    const view = await buildScriptizWidgetView(ctx, name, payload);
+    const text = summarizeToolForModel(name, payload);
+    return {
+      content: [{ type: "text" as const, text }],
+      structuredContent: { tool: name, view },
+    };
   };
 }
+
+const readOnly: ToolAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: false,
+};
+
+const openWorldReadOnly: ToolAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: true,
+};
+
+const mutates: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  openWorldHint: true,
+};
 
 /**
  * Register all Scriptiz MCP tools on the given high-level server instance.
@@ -48,16 +80,22 @@ export function registerScriptizTools(
 ): void {
   const reg = (
     name: string,
+    title: string,
     description: string,
     input: z.ZodType<unknown>,
-    toolMeta?: Record<string, unknown>,
+    invoking: string,
+    invoked: string,
+    annotations: ToolAnnotations,
   ) => {
-    server.registerTool(
+    registerAppTool(
+      server,
       name,
       {
+        title,
         description,
         inputSchema: input,
-        ...(toolMeta ? { _meta: toolMeta } : {}),
+        annotations,
+        _meta: scriptizToolDescriptorMeta(invoking, invoked) as McpUiAppToolConfig["_meta"],
       },
       wrapTool(ctx, name),
     );
@@ -65,84 +103,139 @@ export function registerScriptizTools(
 
   reg(
     "extract_content",
+    "Extract YouTube content",
     "Queue a YouTube video extraction job (metadata + captions).",
     schemas.extractContentInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Queueing extraction…",
+    "Queued extraction job",
+    mutates,
   );
   reg(
     "get_extraction_status",
+    "Extraction job status",
     "Get extraction job status by job id.",
     schemas.jobIdInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Reading job…",
+    "Job status ready",
+    readOnly,
   );
   reg(
     "get_content",
+    "Resource + transcript metadata",
     "Get resource and transcript language info.",
     schemas.getContentInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Loading resource…",
+    "Resource loaded",
+    readOnly,
   );
   reg(
     "get_transcript",
+    "Transcript text",
     "Get transcript text (optionally with timestamps) with optional cursor continuation.",
     schemas.getTranscriptInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Loading transcript…",
+    "Transcript ready",
+    readOnly,
   );
   reg(
     "get_timed_transcript",
+    "Timed transcript",
     "Get timed transcript segments with cursor pagination.",
     schemas.getTimedTranscriptInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Loading timed transcript…",
+    "Timed transcript ready",
+    readOnly,
   );
   reg(
     "get_transcript_chunk",
+    "Transcript chunk",
     "Get a transcript chunk by cursor with segment bounds.",
     schemas.getTranscriptChunkInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Loading transcript chunk…",
+    "Chunk ready",
+    readOnly,
   );
   reg(
     "get_transcript_range",
+    "Transcript by time range",
     "Get transcript segments overlapping a time range in ms.",
     schemas.getTranscriptRangeInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Loading range…",
+    "Range ready",
+    readOnly,
   );
   reg(
     "list_available_languages",
+    "Caption languages",
     "List caption languages from yt-dlp metadata (resourceId or url).",
     schemas.listAvailableLanguagesInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Listing languages…",
+    "Languages ready",
+    openWorldReadOnly,
   );
   reg(
     "extract_playlist",
+    "Fetch playlist",
     "Fetch playlist metadata and video items (no per-item transcript).",
     schemas.extractPlaylistInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Fetching playlist…",
+    "Playlist ready",
+    openWorldReadOnly,
   );
   reg(
     "extract_channel_latest",
+    "Fetch channel uploads",
     "Fetch latest channel uploads as video resources.",
     schemas.extractChannelLatestInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Fetching channel…",
+    "Channel items ready",
+    openWorldReadOnly,
   );
-  reg("create_list", "Create a new saved list.", schemas.createListInput, SCRIPTIZ_MCP_APP_TOOL_META);
+  reg(
+    "create_list",
+    "Create list",
+    "Create a new saved list.",
+    schemas.createListInput,
+    "Creating list…",
+    "List created",
+    mutates,
+  );
   reg(
     "add_resource_to_list",
+    "Add resource to list",
     "Add a resource to a list.",
     schemas.addResourceToListInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Updating list…",
+    "Resource added",
+    mutates,
   );
   reg(
     "add_playlist_to_list",
+    "Add playlist to list",
     "Add a playlist (and optionally its videos) to a list.",
     schemas.addPlaylistToListInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Updating list…",
+    "Playlist added",
+    mutates,
   );
   reg(
     "get_list_contents",
+    "List contents",
     "Get list metadata and each item with resolved resource.",
     schemas.getListContentsInput,
-    SCRIPTIZ_MCP_APP_TOOL_META,
+    "Loading list…",
+    "List contents ready",
+    readOnly,
   );
-  reg("list_lists", "List all saved lists (id, name, updatedAt).", z.object({}), SCRIPTIZ_MCP_APP_TOOL_META);
+  reg(
+    "list_lists",
+    "List saved lists",
+    "List all saved lists (id, name, updatedAt).",
+    z.object({}),
+    "Listing lists…",
+    "Lists ready",
+    readOnly,
+  );
 }
 
 /**

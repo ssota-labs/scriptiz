@@ -21,6 +21,8 @@
     "docker:build:mcp": "docker build -f docker/Dockerfile.mcp-all-in-one -t scriptiz-mcp:local .",
     "test:docker-mcp-smoke": "bash scripts/docker-mcp-smoke.sh",
     "test:watch": "vitest",
+    "dev:mcp-http": "bash scripts/openai-mcp-dev.sh",
+    "openai:mcp-inspector": "npx @modelcontextprotocol/inspector@latest --transport http --server-url http://127.0.0.1:2091/mcp",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "changeset": "changeset",

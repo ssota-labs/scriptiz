@@ -62,7 +62,7 @@
           },
           {
             "group": "MCP UI",
-            "pages": ["reference/mcp-ui"]
+            "pages": ["reference/mcp-ui", "reference/openai-apps-testing"]
           }
         ]
       }

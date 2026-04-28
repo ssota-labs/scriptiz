@@ -3,6 +3,7 @@ import { parseMcpUiPayload } from "./parse-payload.js";
 import { JobStatusViewPanel } from "./JobStatusViewPanel.js";
 import { ListViewPanel } from "./ListViewPanel.js";
 import { VideoTranscriptViewPanel } from "./VideoTranscriptViewPanel.js";
+import type { GenericToolView } from "@scriptiz/mcp-tools/ui";
 
 type Props = {
   data: unknown;
@@ -26,7 +27,25 @@ function McpUiViewInner({
   if (v.type === "list_view") {
     return <ListViewPanel v={v} />;
   }
-  return <JobStatusViewPanel v={v} />;
+  if (v.type === "job_status_view") {
+    return <JobStatusViewPanel v={v} />;
+  }
+  if (v.type === "generic_tool_view") {
+    return <GenericToolPanel v={v} />;
+  }
+  const _exhaustive: never = v;
+  return _exhaustive;
+}
+
+function GenericToolPanel({ v }: { v: GenericToolView }) {
+  return (
+    <div className="text-foreground space-y-2 p-4">
+      <h2 className="text-sm font-medium tracking-tight">{v.tool}</h2>
+      <pre className="bg-muted/40 border-border max-h-[min(70vh,520px)] overflow-auto rounded-md border p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap">
+        {JSON.stringify(v.payload, null, 2)}
+      </pre>
+    </div>
+  );
 }
 
 export function McpUiRoot({ data, onTranscriptAction }: Props) {

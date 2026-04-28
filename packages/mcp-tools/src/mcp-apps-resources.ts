@@ -1,7 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { McpServer, ReadResourceCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { fileURLToPath } from "node:url";
+import {
+  registerAppResource,
+  RESOURCE_MIME_TYPE,
+} from "@modelcontextprotocol/ext-apps/server";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SCRIPTIZ_MCP_APP_RESOURCE_URI } from "./mcp-apps-constants.js";
+
+const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const FALLBACK_HTML = `<!DOCTYPE html>
 <html lang="en">
@@ -11,45 +18,76 @@ const FALLBACK_HTML = `<!DOCTYPE html>
   <title>Scriptiz</title>
 </head>
 <body>
-  <p><strong>Scriptiz MCP App</strong> (shell). This page is loaded in the host&rsquo;s sandboxed iframe per <a href="https://modelcontextprotocol.io/extensions/apps/overview" target="_blank" rel="noopener">MCP Apps</a>.</p>
-  <p>Tool handlers still return JSON for compatibility; the interactive <code>ui/*</code> bridge and bundled UI from <code>packages/mcp-tools/web</code> are expanded in follow-up work. Set <code>SCRIPTIZ_MCP_UI_DIST</code> to <code>…/packages/mcp-tools/web/dist</code> (after <code>pnpm --filter @scriptiz/mcp-tools run build:web</code>) to serve <code>index.html</code> instead of this placeholder.</p>
+  <p><strong>Scriptiz MCP App</strong> — embed bundle not found. Run <code>pnpm --filter @scriptiz/mcp-tools run build:widget</code> (outputs <code>web/dist-embed/embed-inlined.html</code>), or set <code>SCRIPTIZ_MCP_EMBED_HTML</code>.</p>
 </body>
 </html>
 `;
 
-async function loadMcpAppHtml(): Promise<string> {
-  const dist = process.env.SCRIPTIZ_MCP_UI_DIST?.trim();
-  if (!dist) {
-    return FALLBACK_HTML;
-  }
-  const indexPath = path.join(dist, "index.html");
-  return readFile(indexPath, "utf8");
-}
-
-const readScriptizMcpApp: ReadResourceCallback = async (uri) => {
-  const text = await loadMcpAppHtml();
-  return {
-    contents: [
-      {
-        uri: uri.toString(),
-        mimeType: "text/html",
-        text,
-      },
-    ],
-  };
+/** CSP for YouTube iframe embeds in the transcript view. */
+const SCRIPTIZ_WIDGET_CSP = {
+  resourceDomains: [
+    "https://www.youtube.com",
+    "https://www.youtube-nocookie.com",
+    "https://i.ytimg.com",
+    "https://img.youtube.com",
+  ],
+  connectDomains: ["https://www.youtube.com"],
 };
 
+async function loadMcpAppHtml(): Promise<string> {
+  const fromEnv = process.env.SCRIPTIZ_MCP_EMBED_HTML?.trim();
+  const candidates = [
+    fromEnv,
+    path.join(PKG_ROOT, "web/dist-embed/embed-inlined.html"),
+    process.env.SCRIPTIZ_MCP_UI_DIST?.trim()
+      ? path.join(process.env.SCRIPTIZ_MCP_UI_DIST.trim(), "index.html")
+      : null,
+  ].filter(Boolean) as string[];
+
+  for (const p of candidates) {
+    try {
+      return await readFile(p, "utf8");
+    } catch {
+      // try next
+    }
+  }
+  return FALLBACK_HTML;
+}
+
 /**
- * Registers the `ui://` HTML resource for MCP Apps hosts to fetch and render in an iframe.
+ * Registers the `ui://` HTML resource for MCP Apps hosts (`text/html;profile=mcp-app`).
  */
 export function registerScriptizMcpAppResource(server: McpServer): void {
-  server.registerResource(
-    "scriptiz-mcp-app",
+  registerAppResource(
+    server,
+    "Scriptiz MCP App",
     SCRIPTIZ_MCP_APP_RESOURCE_URI,
     {
-      title: "Scriptiz MCP App",
-      description: "Interactive UI for Scriptiz tools (MCP Apps)",
+      description: "Interactive UI for Scriptiz MCP tools (MCP Apps)",
+      _meta: {
+        ui: {
+          prefersBorder: true,
+          csp: SCRIPTIZ_WIDGET_CSP,
+        },
+      },
     },
-    readScriptizMcpApp,
+    async (uri) => {
+      const text = await loadMcpAppHtml();
+      return {
+        contents: [
+          {
+            uri: uri.toString(),
+            mimeType: RESOURCE_MIME_TYPE,
+            text,
+            _meta: {
+              ui: {
+                prefersBorder: true,
+                csp: SCRIPTIZ_WIDGET_CSP,
+              },
+            },
+          },
+        ],
+      };
+    },
   );
 }

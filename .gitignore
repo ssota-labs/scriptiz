@@ -1,5 +1,6 @@
 node_modules
 dist
+packages/mcp-tools/web/dist-embed
 coverage
 *.tsbuildinfo
 .pnpm-store

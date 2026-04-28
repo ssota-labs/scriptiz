@@ -28,8 +28,14 @@ Inside the all-in-one container, `DATA_DIR` is always **`/app/data`**. The MCP p
 | `DATA_DIR` | Root for resources, transcripts, jobs, lists. Default: `~/.scriptiz` if unset |
 | `DEFAULT_TRANSCRIPT_LANGUAGE` | Default caption/transcript language code (e.g. `ko`) |
 | `HEALTH_CHECK_PORT` | If set, serves `/` and `/healthz` with plain text `ok` on `0.0.0.0:port` |
-| `SCRIPTIZ_MCP_START_STDIO` | If `0`/`false`, stdio MCP is off (health only) |
-| `SCRIPTIZ_MCP_UI_DIST` | Directory with the **Vite build** of `packages/mcp-tools/web` (`index.html` + assets). Serves the [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview) `ui://scriptiz/app` **HTML** from `resources/read`. **All-in-one and `Dockerfile.mcp` images** set this to `/app/packages/mcp-tools/web/dist` at build time. Locally, if unset, a placeholder page is used. |
+| `SCRIPTIZ_MCP_START_STDIO` | If `0`/`false`, stdio MCP is off (unless HTTP MCP is enabled; see below) |
+| `MCP_HTTP_PORT` | If set (e.g. `2091`), exposes **Streamable HTTP** MCP at `http://MCP_HTTP_HOST:port` + `MCP_HTTP_PATH` for [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) and [OpenAI Apps SDK testing](https://developers.openai.com/apps-sdk/deploy/testing) |
+| `MCP_HTTP_HOST` | Bind host for HTTP MCP. Default: `127.0.0.1` |
+| `MCP_HTTP_PATH` | Path for Streamable HTTP MCP. Default: `/mcp` |
+| `SCRIPTIZ_MCP_EMBED_HTML` | Absolute path to **`embed-inlined.html`** from `pnpm --filter @scriptiz/mcp-tools run build:widget`. Serves [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview) `ui://scriptiz/app` HTML. **Docker images** set this at build time. |
+| `SCRIPTIZ_MCP_UI_DIST` | Legacy fallback: directory with `index.html` + assets (Vite `build:web`). Used only if `SCRIPTIZ_MCP_EMBED_HTML` is unset and the embed file is missing. |
+
+See **[OpenAI Apps SDK — testing](/reference/openai-apps-testing)** for Inspector, ChatGPT developer mode, and API Playground URLs.
 
 ## Worker (`apps/worker`)
 

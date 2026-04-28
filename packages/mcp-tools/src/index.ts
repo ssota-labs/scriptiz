@@ -11,6 +11,7 @@ export {
   videoTranscriptViewSchema,
 } from "./ui/payload-schemas.js";
 export type {
+  GenericToolView,
   JobStatusView,
   ListView,
   McpUiAction,
@@ -27,8 +28,8 @@ export {
   SCRIPTIZ_MCP_SERVER_VERSION,
 } from "./server-factory.js";
 export {
+  scriptizToolDescriptorMeta,
   SCRIPTIZ_MCP_APP_RESOURCE_URI,
-  SCRIPTIZ_MCP_APP_TOOL_META,
 } from "./mcp-apps-constants.js";
 export { registerScriptizMcpAppResource } from "./mcp-apps-resources.js";
 export { runScriptizTool } from "./handlers.js";

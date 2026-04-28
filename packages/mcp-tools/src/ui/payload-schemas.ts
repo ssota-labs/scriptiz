@@ -47,7 +47,15 @@ export const jobStatusViewSchema = z.object({
   resource: resourceSchema.optional(),
 });
 
+/** Fallback when tool output is not mapped to video/list/job views. */
+export const genericToolViewSchema = z.object({
+  type: z.literal("generic_tool_view"),
+  tool: z.string().min(1),
+  payload: z.record(z.unknown()),
+});
+
 export type VideoTranscriptView = z.infer<typeof videoTranscriptViewSchema>;
 export type ListView = z.infer<typeof listViewSchema>;
 export type JobStatusView = z.infer<typeof jobStatusViewSchema>;
+export type GenericToolView = z.infer<typeof genericToolViewSchema>;
 export type McpUiAction = z.infer<typeof mcpUiActionSchema>;

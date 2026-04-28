@@ -1,0 +1,67 @@
+---
+title: OpenAI Apps SDK — testing
+description: MCP Inspector, ChatGPT developer mode, and API Playground with Scriptiz’s optional HTTP MCP endpoint.
+---
+
+OpenAI documents three main ways to validate an MCP connector before production:
+
+1. **[MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector)** — local debugging; mirrors much of the widget/tool flow. Official guide: [Test your integration](https://developers.openai.com/apps-sdk/deploy/testing).
+2. **[ChatGPT developer mode](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt)** — add an HTTPS connector under **Settings → Connectors** (uses **ngrok** or similar for localhost). Help: [Developer mode and MCP apps](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-apps-in-chatgpt-beta).
+3. **[API Playground](https://platform.openai.com/playground)** — **Tools → Add → MCP Server** with your HTTPS URL for raw request/response logs ([Testing](https://developers.openai.com/apps-sdk/deploy/testing)).
+
+Scriptiz’s default Docker/`npx` path is **stdio MCP**. For Inspector and OpenAI’s HTTP examples, enable the **Streamable HTTP** surface:
+
+## Enable HTTP MCP (`/mcp`)
+
+Set **`MCP_HTTP_PORT`** (and optionally **`MCP_HTTP_HOST`**, **`MCP_HTTP_PATH`**). Build and run the server from the repo:
+
+```bash
+pnpm dev:mcp-http
+```
+
+이 명령은 `scripts/openai-mcp-dev.sh`를 실행합니다: `@scriptiz/mcp-tools` 빌드 + `build:widget`(임베드 HTML) + `@scriptiz/mcp-server` 빌드 후 `SCRIPTIZ_MCP_EMBED_HTML`을 설정하고 `http://127.0.0.1:2091/mcp`에서 띄웁니다.
+
+**VS Code / Cursor:** `Tasks: Run Task` → `Scriptiz: OpenAI MCP server (HTTP /mcp)` — 그다음 `Scriptiz: MCP Inspector (OpenAI testing)`.
+
+stdio와 HTTP를 **동시에** 쓰려면 예: `SCRIPTIZ_MCP_START_STDIO=1 pnpm dev:mcp-http` (스크립트는 이미 `MCP_HTTP_PORT`가 있으면 HTTP를 띄웁니다).
+
+수동 실행 예:
+
+```bash
+pnpm --filter @scriptiz/mcp-tools run build && pnpm --filter @scriptiz/mcp-tools run build:widget
+pnpm --filter @scriptiz/mcp-server run build
+export SCRIPTIZ_MCP_EMBED_HTML="$PWD/packages/mcp-tools/web/dist-embed/embed-inlined.html"
+MCP_HTTP_PORT=2091 SCRIPTIZ_MCP_START_STDIO=0 node apps/mcp-server/dist/index.js
+```
+
+기본값: `MCP_HTTP_HOST=127.0.0.1`, `MCP_HTTP_PATH=/mcp`.
+
+## MCP Inspector
+
+From the repo root (with the server listening as above):
+
+```bash
+npx @modelcontextprotocol/inspector@latest --transport http --server-url http://127.0.0.1:2091/mcp
+```
+
+Or use the convenience script:
+
+```bash
+pnpm openai:mcp-inspector
+```
+
+(Assumes `2091`; adjust `--server-url` if you changed `MCP_HTTP_PORT`.)
+
+## ChatGPT / API Playground (HTTPS)
+
+OpenAI expects a **public HTTPS** URL. Tunnel localhost, then use `https://…/mcp`:
+
+```bash
+ngrok http 2091
+```
+
+Use the forwarded URL **`…/mcp`** when creating the connector or MCP entry in the Playground.
+
+## Widget HTML
+
+For iframe UI, run `pnpm --filter @scriptiz/mcp-tools run build:widget` and set **`SCRIPTIZ_MCP_EMBED_HTML`** to `packages/mcp-tools/web/dist-embed/embed-inlined.html` (Docker images set this automatically).

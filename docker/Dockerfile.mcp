@@ -9,8 +9,8 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 ENV NODE_ENV=production
 RUN pnpm -r run build
-RUN pnpm --filter @scriptiz/mcp-tools run build:web
-ENV SCRIPTIZ_MCP_UI_DIST=/app/packages/mcp-tools/web/dist
+RUN pnpm --filter @scriptiz/mcp-tools run build:widget
+ENV SCRIPTIZ_MCP_EMBED_HTML=/app/packages/mcp-tools/web/dist-embed/embed-inlined.html
 ENV DATA_DIR=/app/data
 EXPOSE 8080
 CMD ["node", "apps/mcp-server/dist/index.js"]

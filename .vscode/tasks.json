@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Scriptiz: OpenAI MCP server (HTTP /mcp)",
+      "type": "shell",
+      "command": "pnpm dev:mcp-http",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {}
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Scriptiz: MCP Inspector (OpenAI testing)",
+      "type": "shell",
+      "command": "pnpm openai:mcp-inspector",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

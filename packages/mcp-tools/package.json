@@ -24,11 +24,13 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:web": "tsc -b web/tsconfig.json && vite build --config web/vite.config.ts",
+    "build:widget": "tsc -b web/tsconfig.json && vite build --config web/vite.embed.config.ts && node scripts/embed-inlined.mjs",
     "dev:web": "vite --config web/vite.config.ts",
     "preview:web": "vite preview --config web/vite.config.ts",
     "lint:web": "cd web && eslint ."
   },
   "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@scriptiz/core": "workspace:*",
     "@scriptiz/extractor-ytdlp": "workspace:*",

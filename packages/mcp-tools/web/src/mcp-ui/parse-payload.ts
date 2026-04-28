@@ -1,4 +1,5 @@
 import {
+  genericToolViewSchema,
   jobStatusViewSchema,
   listViewSchema,
   videoTranscriptViewSchema,
@@ -9,6 +10,7 @@ const mcpUiViewUnion = z.discriminatedUnion("type", [
   videoTranscriptViewSchema,
   listViewSchema,
   jobStatusViewSchema,
+  genericToolViewSchema,
 ]);
 
 export type McpUiViewPayload = z.infer<typeof mcpUiViewUnion>;

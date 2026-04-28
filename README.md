@@ -134,10 +134,53 @@ Verified so far:
 
 Known limits:
 
-- MCP transport is stdio. The recommended end-user path is `npx @scriptiz/mcp` (Docker all-in-one). The compose `mcp-server` service is mainly for health checks and dev smoke tests, not a remote HTTP MCP endpoint.
+- **Default MCP transport is stdio** (`npx @scriptiz/mcp`, IDEs). For OpenAI Apps SDK flows (MCP Inspector, ChatGPT connectors, API Playground), use the [Testing](#testing) section and [OpenAI’s integration testing guide](https://developers.openai.com/apps-sdk/deploy/testing); full detail: [apps/docs/reference/openai-apps-testing.mdx](apps/docs/reference/openai-apps-testing.mdx).
 - Local dev data defaults to `~/.scriptiz`; the npx/Docker path uses a named volume or `SCRIPTIZ_DATA_DIR`.
 - STT requires `OPENAI_API_KEY` or `XAI_API_KEY` when you enable STT (with optional `STT_PROVIDER=openai|xai`). When captionless fallback runs, failures surface as job `errorCode` values such as `STT_API_KEY_MISSING`, `STT_PROVIDER_INVALID`, `STT_FILE_TOO_LARGE`, `STT_TIMEOUT`, and `STT_HTTP_ERROR` (inspect `get_extraction_status`).
 - Hosted cache, auth, billing, teams, cloud sync, and remote MCP are roadmap items.
+
+## Testing
+
+Work from the repo root after `pnpm install`.
+
+### Automated checks (CI-style)
+
+- `pnpm -r run build` — workspace TypeScript builds.
+- `pnpm lint` — ESLint.
+- `pnpm test:unit` — Vitest unit tests (packages + worker + shared tests).
+- `pnpm test:docker-smoke` — all-in-one Docker image, stdio MCP, and a real YouTube extraction/tool round-trip (Docker + network).
+
+Optional: `pnpm test:e2e`, `pnpm test:integration`, `pnpm test:docker-compose-smoke`, `pnpm test:docker-mcp-smoke`.
+
+### OpenAI Apps SDK: HTTP MCP + MCP Inspector
+
+The published `npx` path speaks **stdio** to your IDE. [OpenAI’s testing flow](https://developers.openai.com/apps-sdk/deploy/testing) expects a **Streamable HTTP** endpoint. From a clone, use:
+
+1. **Terminal 1 — start HTTP MCP**
+
+   ```bash
+   pnpm dev:mcp-http
+   ```
+
+   This runs [`scripts/openai-mcp-dev.sh`](scripts/openai-mcp-dev.sh): builds `@scriptiz/mcp-tools`, runs `build:widget` (inline HTML for the iframe), exports `SCRIPTIZ_MCP_EMBED_HTML`, and serves **`http://127.0.0.1:2091/mcp`** (defaults: `MCP_HTTP_HOST=127.0.0.1`, `MCP_HTTP_PATH=/mcp`). If `2091` is taken, use e.g. `MCP_HTTP_PORT=2092 pnpm dev:mcp-http` and pass that port to the Inspector.
+
+   In **VS Code / Cursor**: **Tasks: Run Task** → **Scriptiz: OpenAI MCP server (HTTP /mcp)**.
+
+2. **Terminal 2 — MCP Inspector**
+
+   ```bash
+   pnpm openai:mcp-inspector
+   ```
+
+   Equivalent to `npx @modelcontextprotocol/inspector@latest --transport http --server-url http://127.0.0.1:2091/mcp`. If you changed the port, run Inspector with a matching `--server-url`.
+
+   In **VS Code / Cursor**: **Scriptiz: MCP Inspector (OpenAI testing)**.
+
+3. **Optional:** run HTTP and stdio together, e.g. `SCRIPTIZ_MCP_START_STDIO=1 pnpm dev:mcp-http` (see the reference page below).
+
+4. **ChatGPT developer mode / API Playground** require a **public HTTPS** URL. Forward the HTTP port (for example `ngrok http 2091`) and register **`https://…/mcp`**. Links: [Test your integration](https://developers.openai.com/apps-sdk/deploy/testing), [Connect ChatGPT](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt).
+
+Longer walkthrough, env vars, and manual commands: [apps/docs/reference/openai-apps-testing.mdx](apps/docs/reference/openai-apps-testing.mdx).
 
 ## Documentation
 

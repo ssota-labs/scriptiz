@@ -4,6 +4,7 @@ export {
   buildVideoTranscriptView,
 } from "./build-payloads.js";
 export {
+  genericToolViewSchema,
   jobStatusViewSchema,
   listViewItemSchema,
   listViewSchema,
@@ -11,6 +12,7 @@ export {
   videoTranscriptViewSchema,
 } from "./payload-schemas.js";
 export type {
+  GenericToolView,
   JobStatusView,
   ListView,
   McpUiAction,
