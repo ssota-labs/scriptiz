@@ -1,5 +1,12 @@
 # @scriptiz/stt-xai
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @scriptiz/schemas@1.0.0
+
 ## 0.1.0
 
 ### Minor Changes
