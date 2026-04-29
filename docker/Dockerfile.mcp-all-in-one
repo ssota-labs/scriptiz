@@ -14,10 +14,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
-# Library builds, then MCP Apps inlined HTML (packages/mcp-tools/web/dist-embed/embed-inlined.html)
 RUN pnpm -r run build
-RUN pnpm --filter @scriptiz/mcp-tools run build:widget
-ENV SCRIPTIZ_MCP_EMBED_HTML=/app/packages/mcp-tools/web/dist-embed/embed-inlined.html
 COPY docker/entrypoint.mcp-all-in-one.sh /usr/local/bin/scriptiz-mcp
 RUN chmod +x /usr/local/bin/scriptiz-mcp
 CMD ["/usr/local/bin/scriptiz-mcp"]

@@ -1,25 +1,16 @@
 #!/usr/bin/env bash
-# OpenAI Apps SDK / MCP Inspector용 로컬 MCP: Streamable HTTP + ui:// 임베드 HTML
+# MCP Inspector용 로컬 MCP: Streamable HTTP (stdio는 기본 별도)
 # 사용: pnpm dev:mcp-http  /  MCP_HTTP_PORT=3000 pnpm dev:mcp-http
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "[openai-mcp] building @scriptiz/mcp-tools (tsc + widget embed)..."
+echo "[openai-mcp] building @scriptiz/mcp-tools (tsc)..."
 pnpm --filter @scriptiz/mcp-tools run build
-pnpm --filter @scriptiz/mcp-tools run build:widget
 
 echo "[openai-mcp] building @scriptiz/mcp-server..."
 pnpm --filter @scriptiz/mcp-server run build
-
-EMBED="${ROOT}/packages/mcp-tools/web/dist-embed/embed-inlined.html"
-if [[ -f "${EMBED}" ]]; then
-  export SCRIPTIZ_MCP_EMBED_HTML="${EMBED}"
-  echo "[openai-mcp] SCRIPTIZ_MCP_EMBED_HTML=${EMBED}"
-else
-  echo "[openai-mcp] warning: missing ${EMBED} (ui:// will use fallback HTML)"
-fi
 
 export MCP_HTTP_PORT="${MCP_HTTP_PORT:-2091}"
 export MCP_HTTP_HOST="${MCP_HTTP_HOST:-127.0.0.1}"
@@ -33,5 +24,15 @@ echo ""
 echo "[openai-mcp] Streamable HTTP → http://${MCP_HTTP_HOST}:${MCP_HTTP_PORT}${MCP_HTTP_PATH}"
 echo "[openai-mcp] 다른 터미널: pnpm openai:mcp-inspector"
 echo ""
+
+if command -v lsof >/dev/null 2>&1; then
+  if lsof -nP -iTCP:"${MCP_HTTP_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "[openai-mcp] error: port ${MCP_HTTP_PORT} is already in use:" >&2
+    lsof -nP -iTCP:"${MCP_HTTP_PORT}" -sTCP:LISTEN >&2 || true
+    echo "[openai-mcp] stop that process (e.g. kill PID above) or use another port:" >&2
+    echo "[openai-mcp]   MCP_HTTP_PORT=2092 pnpm dev:mcp-http" >&2
+    exit 1
+  fi
+fi
 
 exec node "${ROOT}/apps/mcp-server/dist/index.js"

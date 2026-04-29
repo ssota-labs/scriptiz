@@ -21,5 +21,11 @@ describe("mapVideoDumpToResource", () => {
     expect(resource.id).toBe("youtube_video_dQw4w9WgXcQ");
     expect(resource.type).toBe("video");
     expect(resource.platform).toBe("youtube");
+    expect(resource.ownerThumbnailUrl).toBe(
+      "https://yt3.googleusercontent.com/ytc/sample=s88-c-k-c0x00ffffff-no-rj",
+    );
+    expect(resource.thumbnailUrl).toBe(
+      "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+    );
   });
 });

@@ -18,6 +18,8 @@ export const resourceSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   ownerName: z.string().optional(),
+  /** Channel / uploader profile image (from yt-dlp uploader_avatar_url or thumbnails). */
+  ownerThumbnailUrl: z.string().min(1).optional(),
   ownerSourceId: z.string().optional(),
   durationSeconds: z.number().int().nonnegative().optional(),
   thumbnailUrl: z.string().optional(),
@@ -41,22 +43,6 @@ export const transcriptSchema = z.object({
   status: transcriptStatusSchema,
   segments: z.array(transcriptSegmentSchema),
   rawSubtitlePath: z.string().optional(),
-  createdAt: z.string().min(1),
-  updatedAt: z.string().min(1),
-});
-
-export const userListItemSchema = z.object({
-  id: z.string().min(1),
-  resourceId: z.string().min(1),
-  note: z.string().optional(),
-  addedAt: z.string().min(1),
-});
-
-export const userListSchema = z.object({
-  id: z.string().min(1),
-  name: z.string(),
-  description: z.string().optional(),
-  items: z.array(userListItemSchema),
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
 });
@@ -103,8 +89,6 @@ export type TranscriptSource = z.infer<typeof transcriptSourceSchema>;
 export type Resource = z.infer<typeof resourceSchema>;
 export type TranscriptSegment = z.infer<typeof transcriptSegmentSchema>;
 export type Transcript = z.infer<typeof transcriptSchema>;
-export type UserListItem = z.infer<typeof userListItemSchema>;
-export type UserList = z.infer<typeof userListSchema>;
 export type ExtractionJobStatus = z.infer<typeof extractionJobStatusSchema>;
 export type ExtractionJobKind = z.infer<typeof extractionJobKindSchema>;
 export type ExtractionJob = z.infer<typeof extractionJobSchema>;

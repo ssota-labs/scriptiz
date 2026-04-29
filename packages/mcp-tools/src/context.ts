@@ -2,7 +2,6 @@ import { defaultScriptizDataDir } from "@scriptiz/core";
 import type {
   ExtractorPort,
   JobQueuePort,
-  ListStorePort,
   ResourceStorePort,
   TranscriptStorePort,
 } from "@scriptiz/ports";
@@ -13,7 +12,7 @@ import { FilesystemStorage } from "@scriptiz/storage-filesystem";
 export type ScriptizMcpContext = {
   dataDir: string;
   defaultLanguage: string;
-  storage: TranscriptStorePort & ResourceStorePort & ListStorePort;
+  storage: TranscriptStorePort & ResourceStorePort;
   queue: JobQueuePort;
   extractor: ExtractorPort;
 };

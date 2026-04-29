@@ -15,9 +15,7 @@ const REQUIRED_TOOLS = [
   "get_extraction_status",
   "get_timed_transcript",
   "get_transcript_chunk",
-  "create_list",
-  "add_resource_to_list",
-  "get_list_contents",
+  "list_available_languages",
 ];
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -204,34 +202,12 @@ async function main() {
       );
     }
 
-    const listName = `docker-smoke-${Date.now()}`;
-    const { parsed: created } = await callToolJson(
-      client,
-      "create_list",
-      { name: listName },
-      "create_list",
-    );
-    const listId = created.listId;
-    if (!listId) {
-      throw new Error(`create_list: ${JSON.stringify(created)}`);
-    }
-
     await callToolJson(
       client,
-      "add_resource_to_list",
-      { listId, resourceId },
-      "add_resource_to_list",
+      "list_available_languages",
+      { url: smokeUrl },
+      "list_available_languages",
     );
-
-    const { parsed: contents } = await callToolJson(
-      client,
-      "get_list_contents",
-      { listId },
-      "get_list_contents",
-    );
-    if (!contents.list || !Array.isArray(contents.items)) {
-      throw new Error(`get_list_contents: ${JSON.stringify(contents)}`);
-    }
 
     logErr("mcp-docker-smoke: all checks passed");
   } finally {

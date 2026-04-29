@@ -1,9 +1,11 @@
 ---
 title: Extraction & status
-description: extract_content, get_extraction_status, extract_playlist, extract_channel_latest, list_available_languages
+description: extract_content, get_extraction_status, list_available_languages
 ---
 
 Schemas are defined in `packages/mcp-tools/src/schemas.ts`.
+
+Scriptiz MCP focuses on **single YouTube videos and Shorts** (watch URLs). Playlist-only and channel-tab URLs are rejected with `UNSUPPORTED_URL`.
 
 ## `extract_content`
 
@@ -17,6 +19,7 @@ Enqueues a metadata + caption (or STT) extraction **job** for a YouTube **video*
 | `language` | string | no | Default: server `DEFAULT_TRANSCRIPT_LANGUAGE` / context default |
 | `allowSttFallback` | boolean | no | Use STT when no captions |
 | `forceRefresh` | boolean | no | If `true`, re-queue even when a transcript already exists |
+| `uiLocale` | string | no | Optional BCP-47 tag retained for API compatibility |
 
 **Success (summary)**  
 `jobId`, `status`, `resourceId`, `alreadyExtracted?`
@@ -28,37 +31,10 @@ Enqueues a metadata + caption (or STT) extraction **job** for a YouTube **video*
 
 ## `get_extraction_status`
 
-**Input:** `{ "jobId": string }`
+**Input:** `{ "jobId": string, "uiLocale"?: string }`
 
 **Success:** `jobId`, `status`, `resourceId?`, `errorCode?`, `errorMessage?`, `updatedAt`  
 **Errors:** `JOB_NOT_FOUND`, `VALIDATION_ERROR`
-
----
-
-## `extract_playlist`
-
-Fetches playlist **metadata** and **video item** resources and stores them. It does **not** create an `extract_content` job **per item** (call `extract_content` later for transcripts).
-
-**Input**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `url` | string | Playlist URL |
-| `maxItems` | number | Default 200, max 5000 |
-
-**Success:** `playlistResourceId`, `title`, `itemCount`, `items` (resource array)  
-**Errors:** `UNSUPPORTED_URL`, `PARSE_FAILED`, `VALIDATION_ERROR`, `INTERNAL`, etc.
-
----
-
-## `extract_channel_latest`
-
-Fetches a channel (or tab) **latest uploads** in a similar way.
-
-**Input:** `url`, `maxItems` (default 20, max 5000)
-
-**Success:** `channelResourceId`, `title`, `items`  
-**Errors:** `UNSUPPORTED_URL`, `PARSE_FAILED`, `VALIDATION_ERROR`
 
 ---
 
@@ -66,7 +42,7 @@ Fetches a channel (or tab) **latest uploads** in a similar way.
 
 Returns **available caption languages** from `yt-dlp` metadata (useful before saving).
 
-**Input:** `resourceId` **or** `url` (if both, `resourceId` wins)
+**Input:** `resourceId` **or** `url` (if both, `resourceId` wins). URL must be a **single-video** YouTube URL.
 
 **Success:** `{ "languages": [ ... ] }`  
 **Errors:** `VALIDATION_ERROR` (neither `resourceId` nor `url`), `NOT_FOUND`, `UNSUPPORTED_URL`
@@ -76,8 +52,8 @@ Returns **available caption languages** from `yt-dlp` metadata (useful before sa
 | Code | Meaning |
 |------|---------|
 | `VALIDATION_ERROR` | Zod validation failed |
-| `NOT_FOUND` | Resource or list missing |
-| `UNSUPPORTED_URL` | YouTube URL shape not supported |
+| `NOT_FOUND` | Resource missing |
+| `UNSUPPORTED_URL` | YouTube URL not supported (only single-video URLs) |
 | `JOB_NOT_FOUND` | Unknown job id |
 | `DUPLICATE_JOB` | Job already in progress for resource |
 | `PARSE_FAILED` | Failed to parse yt-dlp response |

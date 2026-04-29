@@ -5,10 +5,12 @@ export const extractContentInput = z.object({
   language: z.string().min(1).optional(),
   allowSttFallback: z.boolean().optional(),
   forceRefresh: z.boolean().optional(),
+  uiLocale: z.string().min(2).max(32).optional(),
 });
 
 export const jobIdInput = z.object({
   jobId: z.string().min(1),
+  uiLocale: z.string().min(2).max(32).optional(),
 });
 
 export const getContentInput = z.object({
@@ -47,35 +49,4 @@ export const getTranscriptRangeInput = z.object({
 export const listAvailableLanguagesInput = z.object({
   resourceId: z.string().min(1).optional(),
   url: z.string().min(1).optional(),
-});
-
-export const extractPlaylistInput = z.object({
-  url: z.string().min(1),
-  maxItems: z.number().int().positive().max(5000).optional(),
-});
-
-export const extractChannelLatestInput = z.object({
-  url: z.string().min(1),
-  maxItems: z.number().int().positive().max(5000).optional(),
-});
-
-export const createListInput = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-});
-
-export const addResourceToListInput = z.object({
-  listId: z.string().min(1),
-  resourceId: z.string().min(1),
-  note: z.string().optional(),
-});
-
-export const addPlaylistToListInput = z.object({
-  listId: z.string().min(1),
-  playlistResourceId: z.string().min(1),
-  includeItems: z.boolean().optional(),
-});
-
-export const getListContentsInput = z.object({
-  listId: z.string().min(1),
 });

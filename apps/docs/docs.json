@@ -49,20 +49,8 @@
         "tab": "Reference",
         "groups": [
           {
-            "group": "Extraction & status",
-            "pages": ["reference/extraction"]
-          },
-          {
-            "group": "Transcript",
-            "pages": ["reference/transcript"]
-          },
-          {
-            "group": "Lists",
-            "pages": ["reference/lists"]
-          },
-          {
-            "group": "MCP UI",
-            "pages": ["reference/mcp-ui", "reference/openai-apps-testing"]
+            "group": "Reference",
+            "pages": ["reference/extraction", "reference/transcript"]
           }
         ]
       }

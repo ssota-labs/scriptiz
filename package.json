@@ -7,13 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev:ui": "pnpm --filter @scriptiz/mcp-tools dev:web",
     "dev:docs": "pnpm --filter @scriptiz/docs dev",
     "build": "pnpm -r run build",
     "typecheck": "pnpm -r run build",
     "test": "vitest run",
     "test:unit": "vitest run packages/core packages/schemas packages/extractor-ytdlp packages/mcp-tools packages/stt-openai packages/stt-xai packages/storage-filesystem packages/queue-local apps/worker tests",
     "test:integration": "vitest run tests/integration",
+    "test:ytdlp-live": "RUN_YTDLP_THUMB_LIVE=1 vitest run tests/integration/ytdlp-thumbnails-live.test.ts",
     "test:adapter": "vitest run packages/extractor-ytdlp",
     "test:e2e": "vitest run tests/e2e",
     "test:docker-smoke": "bash scripts/docker-smoke.sh",
@@ -22,7 +22,7 @@
     "test:docker-mcp-smoke": "bash scripts/docker-mcp-smoke.sh",
     "test:watch": "vitest",
     "dev:mcp-http": "bash scripts/openai-mcp-dev.sh",
-    "openai:mcp-inspector": "npx @modelcontextprotocol/inspector@latest --transport http --server-url http://127.0.0.1:2091/mcp",
+    "openai:mcp-inspector": "bash scripts/openai-mcp-inspector.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "changeset": "changeset",

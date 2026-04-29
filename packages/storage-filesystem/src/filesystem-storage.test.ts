@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { FilesystemStorage } from "./filesystem-storage.js";
-import type { Resource, Transcript, UserList } from "@scriptiz/schemas";
+import type { Resource, Transcript } from "@scriptiz/schemas";
 
 describe("FilesystemStorage", () => {
   let dataRoot: string;
@@ -66,20 +66,5 @@ describe("FilesystemStorage", () => {
       "utf8",
     );
     expect(raw).toBe("WEBVTT\n");
-  });
-
-  it("round-trips a list and listIds", async () => {
-    const l: UserList = {
-      id: "list_one",
-      name: "L",
-      items: [],
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
-    };
-    await store.putList(l);
-    const got = await store.getListById("list_one");
-    expect(got).toEqual(l);
-    const ids = await store.listIds();
-    expect(ids).toEqual(["list_one"]);
   });
 });

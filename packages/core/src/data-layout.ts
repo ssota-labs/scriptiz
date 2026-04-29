@@ -1,7 +1,7 @@
 import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 
-const SUBDIRS = ["resources", "lists", "transcripts", "jobs", "tmp"] as const;
+const SUBDIRS = ["resources", "transcripts", "jobs", "tmp"] as const;
 
 /**
  * Ensures `dataRoot` and expected subdirectories exist. If a subpath exists

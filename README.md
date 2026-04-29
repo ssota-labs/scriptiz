@@ -2,7 +2,7 @@
 
 Scriptiz is a local-first MCP server for extracting video metadata and timed transcripts.
 
-The current MVP focuses on YouTube videos, Shorts, playlists, channel uploads, cursor-based transcript reads, local lists, Docker execution, and MCP UI payloads. Scriptiz is not a summarizer. It provides reliable source material to agents; summarization, recommendation, clipping, and research workflows should live in other MCP servers or skills.
+The current MVP focuses on **single-video** YouTube transcript extraction (videos and Shorts) with cursor-based transcript reads and Docker execution. Scriptiz is not a summarizer. It provides reliable source material to agents; summarization, recommendation, clipping, list management, and research workflows should live in other MCP servers or skills.
 
 ## Install (recommended: Docker + `npx`)
 
@@ -111,18 +111,15 @@ See [docs/MCP_RELEASE.md](docs/MCP_RELEASE.md) for publishing the image to GHCR 
 
 ## What It Does
 
-- Extracts YouTube metadata and captions with `yt-dlp`.
-- Stores resources, transcripts, jobs, and lists on the local filesystem.
+- Extracts YouTube video metadata and captions with `yt-dlp`.
+- Stores resources, transcripts, and jobs on the local filesystem.
 - Provides timed transcript segments.
 - Lets agents read long transcripts through cursors and time ranges.
-- Imports playlist metadata and channel uploads.
-- Saves resources into user-defined local lists.
-- Returns structured data for transcripts, lists, and jobs; MCP Apps hosts can render the shared `ui://scriptiz/app` HTML using ordinary tool results (`get_timed_transcript`, `get_list_contents`, `get_extraction_status`, etc.).
 - Supports optional STT fallback through OpenAI or xAI when captions are unavailable.
 
 ## Current Status
 
-Scriptiz is an early MVP. The repo already includes the TypeScript workspace, MCP server, worker, YouTube extractor, filesystem storage, local queue, MCP tools, STT adapters, Docker setup, and a demo MCP UI renderer.
+Scriptiz is an early MVP. The repo includes the TypeScript workspace, MCP server, worker, YouTube extractor, filesystem storage, local queue, MCP tools, STT adapters, and Docker setup.
 
 Verified so far:
 
@@ -134,7 +131,7 @@ Verified so far:
 
 Known limits:
 
-- **Default MCP transport is stdio** (`npx @scriptiz/mcp`, IDEs). For OpenAI Apps SDK flows (MCP Inspector, ChatGPT connectors, API Playground), use the [Testing](#testing) section and [OpenAI’s integration testing guide](https://developers.openai.com/apps-sdk/deploy/testing); full detail: [apps/docs/reference/openai-apps-testing.mdx](apps/docs/reference/openai-apps-testing.mdx).
+- **Default MCP transport is stdio** (`npx @scriptiz/mcp`, IDEs).
 - Local dev data defaults to `~/.scriptiz`; the npx/Docker path uses a named volume or `SCRIPTIZ_DATA_DIR`.
 - STT requires `OPENAI_API_KEY` or `XAI_API_KEY` when you enable STT (with optional `STT_PROVIDER=openai|xai`). When captionless fallback runs, failures surface as job `errorCode` values such as `STT_API_KEY_MISSING`, `STT_PROVIDER_INVALID`, `STT_FILE_TOO_LARGE`, `STT_TIMEOUT`, and `STT_HTTP_ERROR` (inspect `get_extraction_status`).
 - Hosted cache, auth, billing, teams, cloud sync, and remote MCP are roadmap items.
@@ -152,35 +149,23 @@ Work from the repo root after `pnpm install`.
 
 Optional: `pnpm test:e2e`, `pnpm test:integration`, `pnpm test:docker-compose-smoke`, `pnpm test:docker-mcp-smoke`.
 
-### OpenAI Apps SDK: HTTP MCP + MCP Inspector
+### Streamable HTTP MCP + MCP Inspector
 
-The published `npx` path speaks **stdio** to your IDE. [OpenAI’s testing flow](https://developers.openai.com/apps-sdk/deploy/testing) expects a **Streamable HTTP** endpoint. From a clone, use:
+The published `npx` path speaks **stdio** to your IDE. To try the server with the MCP Inspector over Streamable HTTP, from a clone:
 
 1. **Terminal 1 — start HTTP MCP**
-
    ```bash
    pnpm dev:mcp-http
    ```
-
-   This runs [`scripts/openai-mcp-dev.sh`](scripts/openai-mcp-dev.sh): builds `@scriptiz/mcp-tools`, runs `build:widget` (inline HTML for the iframe), exports `SCRIPTIZ_MCP_EMBED_HTML`, and serves **`http://127.0.0.1:2091/mcp`** (defaults: `MCP_HTTP_HOST=127.0.0.1`, `MCP_HTTP_PATH=/mcp`). If `2091` is taken, use e.g. `MCP_HTTP_PORT=2092 pnpm dev:mcp-http` and pass that port to the Inspector.
-
-   In **VS Code / Cursor**: **Tasks: Run Task** → **Scriptiz: OpenAI MCP server (HTTP /mcp)**.
-
+   This runs `scripts/openai-mcp-dev.sh`: builds `@scriptiz/mcp-tools` and `@scriptiz/mcp-server`, then serves `http://127.0.0.1:2091/mcp` (defaults: `MCP_HTTP_HOST=127.0.0.1`, `MCP_HTTP_PATH=/mcp`). Override the port with `MCP_HTTP_PORT=2092 pnpm dev:mcp-http`.
 2. **Terminal 2 — MCP Inspector**
-
    ```bash
    pnpm openai:mcp-inspector
    ```
+   Equivalent to `npx @modelcontextprotocol/inspector@latest --transport http --server-url http://127.0.0.1:2091/mcp`.
+3. **Optional:** run HTTP and stdio together, e.g. `SCRIPTIZ_MCP_START_STDIO=1 pnpm dev:mcp-http`.
 
-   Equivalent to `npx @modelcontextprotocol/inspector@latest --transport http --server-url http://127.0.0.1:2091/mcp`. If you changed the port, run Inspector with a matching `--server-url`.
-
-   In **VS Code / Cursor**: **Scriptiz: MCP Inspector (OpenAI testing)**.
-
-3. **Optional:** run HTTP and stdio together, e.g. `SCRIPTIZ_MCP_START_STDIO=1 pnpm dev:mcp-http` (see the reference page below).
-
-4. **ChatGPT developer mode / API Playground** require a **public HTTPS** URL. Forward the HTTP port (for example `ngrok http 2091`) and register **`https://…/mcp`**. Links: [Test your integration](https://developers.openai.com/apps-sdk/deploy/testing), [Connect ChatGPT](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt).
-
-Longer walkthrough, env vars, and manual commands: [apps/docs/reference/openai-apps-testing.mdx](apps/docs/reference/openai-apps-testing.mdx).
+See [OpenAI’s testing guide](https://developers.openai.com/apps-sdk/deploy/testing) for ChatGPT connector flows (public HTTPS URL required).
 
 ## Documentation
 
@@ -204,10 +189,10 @@ apps/
   docs/            Mintlify site (product docs; not the root docs/ planning notes)
 
 packages/
-  core/            IDs, cursors, transcript slicing, list logic, safe path helpers
+  core/            IDs, cursors, transcript slicing, safe path helpers
   schemas/         shared domain schemas
   ports/           storage, queue, extractor, and STT interfaces
-  mcp-tools/       MCP tool handlers, MCP UI payload builders, Vite app (`web/` for `ui://`) + input schemas
+  mcp-tools/       MCP tool handlers and Zod input schemas
   extractor-ytdlp/ yt-dlp adapter and VTT parsing
   storage-filesystem/
   queue-local/
@@ -232,7 +217,6 @@ Local storage layout:
 ~/.scriptiz/
   resources/
   transcripts/
-  lists/
   jobs/
     queued/
     running/
@@ -319,20 +303,7 @@ Transcript:
 - `get_transcript_chunk`: read a cursor-based chunk.
 - `get_transcript_range`: read segments overlapping a time range.
 
-Playlist and channel:
-
-- `extract_playlist`: fetch playlist metadata and video items.
-- `extract_channel_latest`: fetch latest channel uploads.
-
-Lists:
-
-- `create_list`
-- `list_lists`
-- `add_resource_to_list`
-- `add_playlist_to_list`
-- `get_list_contents`
-
-**MCP Apps:** every tool includes `_meta.ui.resourceUri` → `ui://scriptiz/app`. Hosts that support MCP Apps load that HTML in an iframe; use the **data tools above** (not separate “view” tools) for transcript, list, and job JSON.
+Successful tool calls return **JSON** in MCP text `content` (no bundled iframe / MCP Apps UI).
 
 Typical flow:
 
@@ -341,8 +312,6 @@ extract_content({ url, language: "ko" })
   -> get_extraction_status({ jobId })
   -> get_timed_transcript({ resourceId, language: "ko" })
   -> get_transcript_chunk({ resourceId, cursor })
-  -> create_list({ name })
-  -> add_resource_to_list({ listId, resourceId })
 ```
 
 ## Docker
@@ -363,7 +332,7 @@ pnpm docker:build:mcp
 docker compose up --build
 curl http://127.0.0.1:8080/healthz
 pnpm test:docker-compose-smoke   # optional: split compose /healthz only
-pnpm test:docker-smoke          # all-in-one image + MCP stdio: real extraction, transcript, list tools (no separate view tools)
+pnpm test:docker-smoke          # all-in-one image + MCP stdio: real extraction and transcript tools
 pnpm test:docker-mcp-smoke      # quick: build image + sanity checks (no full MCP protocol)
 ```
 
@@ -402,16 +371,15 @@ pnpm test:docker-smoke
 pnpm test:docker-compose-smoke
 pnpm test:docker-mcp-smoke
 pnpm docker:build:mcp
-pnpm dev:ui
 pnpm dev:docs
 ```
 
 Test tiers:
 
-- Unit tests are fast and deterministic. They cover core IDs, cursors, transcript slicing, list logic, URL validation, VTT parsing, schemas, STT segment normalization, and storage safety helpers.
+- Unit tests are fast and deterministic. They cover core IDs, cursors, transcript slicing, URL validation, VTT parsing, schemas, STT segment normalization, and storage safety helpers.
 - Integration tests use temporary directories and fixtures to verify local storage and queue behavior without external APIs.
 - Adapter/e2e tests may require `yt-dlp`, `ffmpeg`, network access, Docker, and optional STT keys.
-- `pnpm test:docker-smoke` builds the all-in-one image (when using `scriptiz-mcp:local`), runs the same path as `npx @scriptiz/mcp` against a **throwaway** Docker volume, and exercises MCP stdio (`initialize`, `tools/list`, `tools/call`) through a real YouTube extraction job, transcript reads, and list tools. Requires Docker, network access, and `yt-dlp` inside the image.
+- `pnpm test:docker-smoke` builds the all-in-one image (when using `scriptiz-mcp:local`), runs the same path as `npx @scriptiz/mcp` against a **throwaway** Docker volume, and exercises MCP stdio (`initialize`, `tools/list`, `tools/call`) through a real YouTube extraction job and transcript reads. Requires Docker, network access, and `yt-dlp` inside the image.
 - `pnpm test:docker-compose-smoke` is optional and only checks split-compose `mcp-server` `/healthz`.
 
 Before opening a PR:
@@ -441,8 +409,6 @@ Good first contribution areas:
 - Add fixture-based integration tests.
 - Improve MCP tool error messages.
 - Add source adapters behind existing ports.
-- Improve the MCP UI payload renderer without turning it into a hosted product.
-
 Project rules:
 
 - Keep extraction separate from summarization.
@@ -458,7 +424,7 @@ When adding a feature:
 3. Put I/O behind a port in `packages/ports`.
 4. Implement local adapters under `packages/`*.
 5. Wire MCP behavior in `packages/mcp-tools`.
-6. Register new tools in `apps/mcp-server`.
+6. Register new tools in `packages/mcp-tools` (`server-factory.ts`).
 7. Add unit and integration tests.
 8. Document the tool in the Mintlify site under `apps/docs` and, where helpful, in this README.
 
@@ -470,7 +436,6 @@ Near term:
 
 Open-source MCP:
 
-- **MCP Apps HTML:** shared `ui://scriptiz/app` + iframe; data comes from standard tools (`get_timed_transcript`, `get_list_contents`, etc.).
 - More source adapters: Vimeo, Loom, podcasts, and direct audio/video files.
 
 Cloud / hosted:

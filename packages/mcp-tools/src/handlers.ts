@@ -1,23 +1,15 @@
 import {
-  addResourceToList,
-  createUserList,
   decodeTranscriptCursor,
   encodeTranscriptCursor,
   joinSegmentTexts,
   makeResourceId,
   sliceSegmentsByTimeRange,
 } from "@scriptiz/core";
-import {
-  mapChannelRootToResource,
-  mapPlaylistRootToResource,
-  mapVideoEntryToResource,
-  YtDlpError,
-} from "@scriptiz/extractor-ytdlp";
+import { YtDlpError } from "@scriptiz/extractor-ytdlp";
 import { DuplicateRunningJobError } from "@scriptiz/ports";
 import type {
   ExtractionJob,
   ExtractionJobStatus,
-  Resource,
   TranscriptSegment,
 } from "@scriptiz/schemas";
 import { randomUUID } from "node:crypto";
@@ -30,14 +22,8 @@ import {
 import { toolErr } from "./tool-result.js";
 import type { ToolErrorBody, ToolResult } from "./tool-result.js";
 import {
-  addPlaylistToListInput,
-  addResourceToListInput,
-  createListInput,
-  extractChannelLatestInput,
   extractContentInput,
-  extractPlaylistInput,
   getContentInput,
-  getListContentsInput,
   getTimedTranscriptInput,
   getTranscriptChunkInput,
   getTranscriptInput,
@@ -45,14 +31,7 @@ import {
   jobIdInput,
   listAvailableLanguagesInput,
 } from "./schemas.js";
-import {
-  ensureChannelVideosUrl,
-  isStrictYouTubeChannelOrTabUrl,
-  isStrictYouTubePlaylistUrl,
-  isStrictYouTubeVideoUrl,
-  parseYoutubeVideoId,
-  toStrictYouTubeUrl,
-} from "./youtube-url.js";
+import { isStrictYouTubeVideoUrl, parseYoutubeVideoId } from "./youtube-url.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -60,154 +39,6 @@ function nowIso() {
 
 function isErr(r: ToolResult): r is ToolErrorBody {
   return "ok" in r && (r as ToolErrorBody).ok === false;
-}
-
-function playlistEntries(dump: unknown): unknown[] {
-  if (!dump || typeof dump !== "object") {
-    return [];
-  }
-  const o = dump as { entries?: unknown };
-  return Array.isArray(o.entries) ? o.entries : [];
-}
-
-/**
- * yt-dlp often emits one JSON line per item (`_type`: `video` or `url`) with
- * `playlist_id` set, instead of a single `_type`: `playlist` root with `entries`.
- * We synthesize a playlist-shaped root so `mapPlaylistRootToResource` and
- * `playlistEntries` behave consistently.
- */
-function syntheticPlaylistFromFlatLines(
-  parts: unknown[],
-): Record<string, unknown> | null {
-  const lines: Record<string, unknown>[] = [];
-  for (const p of parts) {
-    if (!p || typeof p !== "object") {
-      continue;
-    }
-    const o = p as Record<string, unknown>;
-    const t = o._type;
-    if (t !== "url" && t !== "video") {
-      continue;
-    }
-    const pid = o.playlist_id;
-    if (typeof pid !== "string" || pid.length === 0) {
-      continue;
-    }
-    lines.push(o);
-  }
-  if (lines.length === 0) {
-    return null;
-  }
-  const playlistId = lines[0]!.playlist_id as string;
-  for (const o of lines) {
-    if (o.playlist_id !== playlistId) {
-      return null;
-    }
-  }
-  const first = lines[0]!;
-  const title =
-    typeof first.playlist_title === "string" && first.playlist_title.length
-      ? first.playlist_title
-      : "Playlist";
-  const webpage =
-    typeof first.playlist_webpage_url === "string" &&
-    first.playlist_webpage_url.length
-      ? first.playlist_webpage_url
-      : `https://www.youtube.com/playlist?list=${playlistId}`;
-  const uploader =
-    typeof first.playlist_uploader === "string"
-      ? first.playlist_uploader
-      : undefined;
-  return {
-    _type: "playlist",
-    id: playlistId,
-    title,
-    webpage_url: webpage,
-    uploader,
-    entries: lines,
-  };
-}
-
-function findPlaylistObject(parts: unknown[]): unknown {
-  for (const p of parts) {
-    if (!p || typeof p !== "object") {
-      continue;
-    }
-    const o = p as { _type?: string; entries?: unknown };
-    if (o._type === "playlist" || (Array.isArray(o.entries) && o.entries.length)) {
-      return p;
-    }
-  }
-  return syntheticPlaylistFromFlatLines(parts);
-}
-
-/**
- * Channel `/videos` tab: NDJSON is often one `video` / `url` line per upload, each with
- * the same `channel_id`, instead of a root object with `entries`.
- */
-function syntheticChannelFromFlatLines(
-  parts: unknown[],
-): Record<string, unknown> | null {
-  const lines: Record<string, unknown>[] = [];
-  for (const p of parts) {
-    if (!p || typeof p !== "object") {
-      continue;
-    }
-    const o = p as Record<string, unknown>;
-    const t = o._type;
-    if (t !== "url" && t !== "video") {
-      continue;
-    }
-    const ch = o.channel_id;
-    if (typeof ch !== "string" || ch.length === 0) {
-      continue;
-    }
-    lines.push(o);
-  }
-  if (lines.length === 0) {
-    return null;
-  }
-  const channelId = lines[0]!.channel_id as string;
-  for (const o of lines) {
-    if (o.channel_id !== channelId) {
-      return null;
-    }
-  }
-  const first = lines[0]!;
-  const title =
-    typeof first.channel === "string" && first.channel.length
-      ? first.channel
-      : typeof first.uploader === "string" && first.uploader.length
-        ? first.uploader
-        : "YouTube channel";
-  const uploader =
-    typeof first.uploader === "string" ? first.uploader : undefined;
-  return {
-    channel_id: channelId,
-    title,
-    uploader,
-    entries: lines,
-  };
-}
-
-/** Prefer nested yt-dlp channel/tab dump; otherwise merge flat per-video lines. */
-function findChannelRoot(parts: unknown[]): unknown {
-  for (const p of parts) {
-    if (!p || typeof p !== "object") {
-      continue;
-    }
-    const o = p as Record<string, unknown> & { entries?: unknown };
-    const ent = o.entries;
-    if (
-      typeof o.channel_id === "string" &&
-      o.channel_id.length > 0 &&
-      Array.isArray(ent) &&
-      ent.length > 0
-    ) {
-      return p;
-    }
-  }
-  return syntheticChannelFromFlatLines(parts);
 }
 
 export async function handleExtractContent(
@@ -218,7 +49,8 @@ export async function handleExtractContent(
   if (!parsed.success) {
     return toolErr("VALIDATION_ERROR", parsed.error.message, false);
   }
-  const { url, language, allowSttFallback, forceRefresh } = parsed.data;
+  const { url, language, allowSttFallback, forceRefresh, uiLocale } =
+    parsed.data;
   const vid = parseYoutubeVideoId(url);
   if (!vid || !isStrictYouTubeVideoUrl(url)) {
     return toolErr(
@@ -236,6 +68,7 @@ export async function handleExtractContent(
       status: "completed" as ExtractionJobStatus,
       resourceId,
       alreadyExtracted: true,
+      ...(uiLocale ? { uiLocale } : {}),
     };
   }
   const job: ExtractionJob = {
@@ -267,6 +100,7 @@ export async function handleExtractContent(
     status: job.status,
     resourceId: job.resourceId,
     alreadyExtracted: false,
+    ...(uiLocale ? { uiLocale } : {}),
   };
 }
 
@@ -289,6 +123,7 @@ export async function handleGetExtractionStatus(
     errorCode: j.errorCode,
     errorMessage: j.errorMessage,
     updatedAt: j.updatedAt,
+    ...(parsed.data.uiLocale ? { uiLocale: parsed.data.uiLocale } : {}),
   };
 }
 
@@ -419,7 +254,11 @@ export async function handleGetTranscriptChunk(
     try {
       const c = decodeTranscriptCursor(cursor);
       if (c.resourceId !== resourceId || c.language !== language) {
-        return toolErr("INVALID_CURSOR", "Cursor does not match resource/language", false);
+        return toolErr(
+          "INVALID_CURSOR",
+          "Cursor does not match resource/language",
+          false,
+        );
       }
       start = c.nextIndex;
     } catch (e) {
@@ -532,260 +371,6 @@ export async function handleListAvailableLanguages(
   }
 }
 
-export async function handleExtractPlaylist(
-  ctx: ScriptizMcpContext,
-  raw: unknown,
-): Promise<ToolResult> {
-  const parsed = extractPlaylistInput.safeParse(raw);
-  if (!parsed.success) {
-    return toolErr("VALIDATION_ERROR", parsed.error.message, false);
-  }
-  const { url, maxItems = 200 } = parsed.data;
-  if (!isStrictYouTubePlaylistUrl(url)) {
-    return toolErr(
-      "UNSUPPORTED_URL",
-      "Not a supported YouTube playlist URL (add list= or use a playlist link)",
-      false,
-    );
-  }
-  try {
-    const parts = await ctx.extractor.getMetadataDumpLines(url, {
-      playlistEnd: maxItems,
-    });
-    const plDump = findPlaylistObject(parts);
-    if (!plDump) {
-      return toolErr("PARSE_FAILED", "Could not parse playlist from yt-dlp", false);
-    }
-    const t = nowIso();
-    const { resource } = mapPlaylistRootToResource(plDump, t);
-    await ctx.storage.putResource(resource);
-    const rawEntries = playlistEntries(plDump);
-    const items: Resource[] = [];
-    for (const entry of rawEntries.slice(0, maxItems)) {
-      try {
-        const m = mapVideoEntryToResource(entry, t);
-        await ctx.storage.putResource(m.resource);
-        items.push(m.resource);
-      } catch {
-        // skip bad entries
-      }
-    }
-    return {
-      playlistResourceId: resource.id,
-      title: resource.title,
-      itemCount: items.length,
-      items,
-    };
-  } catch (e) {
-    return mapYtdlpToToolErr(e);
-  }
-}
-
-export async function handleExtractChannelLatest(
-  ctx: ScriptizMcpContext,
-  raw: unknown,
-): Promise<ToolResult> {
-  const parsed = extractChannelLatestInput.safeParse(raw);
-  if (!parsed.success) {
-    return toolErr("VALIDATION_ERROR", parsed.error.message, false);
-  }
-  const { maxItems = 20 } = parsed.data;
-  const strict = toStrictYouTubeUrl(parsed.data.url);
-  if (!strict) {
-    return toolErr(
-      "UNSUPPORTED_URL",
-      "Not a supported YouTube channel, tab, or playlist URL",
-      false,
-    );
-  }
-  const url = ensureChannelVideosUrl(strict.toString());
-  if (!isStrictYouTubeChannelOrTabUrl(url)) {
-    return toolErr(
-      "UNSUPPORTED_URL",
-      "Expected a YouTube channel (/@.../videos, /channel/..., /c/...), or playlist URL",
-      false,
-    );
-  }
-  try {
-    const parts = await ctx.extractor.getMetadataDumpLines(url, {
-      playlistEnd: maxItems,
-    });
-    const root = findChannelRoot(parts);
-    if (!root) {
-      return toolErr("PARSE_FAILED", "Could not parse channel from yt-dlp", false);
-    }
-    const t = nowIso();
-    const { resource } = mapChannelRootToResource(
-      root,
-      t,
-      url,
-    );
-    await ctx.storage.putResource(resource);
-    const items: Resource[] = [];
-    for (const entry of playlistEntries(root).slice(0, maxItems)) {
-      try {
-        const m = mapVideoEntryToResource(entry, t);
-        await ctx.storage.putResource(m.resource);
-        items.push(m.resource);
-      } catch {
-        // skip
-      }
-    }
-    return {
-      channelResourceId: resource.id,
-      title: resource.title,
-      items,
-    };
-  } catch (e) {
-    return mapYtdlpToToolErr(e);
-  }
-}
-
-export async function handleCreateList(
-  ctx: ScriptizMcpContext,
-  raw: unknown,
-): Promise<ToolResult> {
-  const parsed = createListInput.safeParse(raw);
-  if (!parsed.success) {
-    return toolErr("VALIDATION_ERROR", parsed.error.message, false);
-  }
-  const id = `list_${randomUUID()}`;
-  const list = createUserList({
-    id,
-    name: parsed.data.name,
-    description: parsed.data.description,
-    now: nowIso(),
-  });
-  await ctx.storage.putList(list);
-  return { listId: list.id, name: list.name, createdAt: list.createdAt };
-}
-
-export async function handleAddResourceToList(
-  ctx: ScriptizMcpContext,
-  raw: unknown,
-): Promise<ToolResult> {
-  const parsed = addResourceToListInput.safeParse(raw);
-  if (!parsed.success) {
-    return toolErr("VALIDATION_ERROR", parsed.error.message, false);
-  }
-  const { listId, resourceId, note } = parsed.data;
-  const list = await ctx.storage.getListById(listId);
-  if (!list) {
-    return toolErr("NOT_FOUND", "List not found", false);
-  }
-  const res = await ctx.storage.getResourceById(resourceId);
-  if (!res) {
-    return toolErr("NOT_FOUND", "Resource not found", false);
-  }
-  const itemId = `item_${randomUUID()}`;
-  const next = addResourceToList(list, {
-    itemId,
-    resourceId,
-    note,
-    now: nowIso(),
-  });
-  await ctx.storage.putList(next);
-  return { listId, itemId, resourceId };
-}
-
-export async function handleAddPlaylistToList(
-  ctx: ScriptizMcpContext,
-  raw: unknown,
-): Promise<ToolResult> {
-  const parsed = addPlaylistToListInput.safeParse(raw);
-  if (!parsed.success) {
-    return toolErr("VALIDATION_ERROR", parsed.error.message, false);
-  }
-  const { listId, playlistResourceId, includeItems = true } = parsed.data;
-  const list = await ctx.storage.getListById(listId);
-  if (!list) {
-    return toolErr("NOT_FOUND", "List not found", false);
-  }
-  const pl = await ctx.storage.getResourceById(playlistResourceId);
-  if (!pl || pl.type !== "playlist") {
-    return toolErr("NOT_FOUND", "Playlist resource not found", false);
-  }
-  const itemId = `item_${randomUUID()}`;
-  let next = addResourceToList(list, {
-    itemId,
-    resourceId: playlistResourceId,
-    now: nowIso(),
-  });
-  if (includeItems) {
-    if (!isStrictYouTubePlaylistUrl(pl.sourceUrl)) {
-      return toolErr(
-        "UNSUPPORTED_URL",
-        "Playlist resource has a non-YouTube or unsupported sourceUrl",
-        false,
-      );
-    }
-    try {
-      const parts = await ctx.extractor.getMetadataDumpLines(pl.sourceUrl, {
-        playlistEnd: 5000,
-      });
-      const plDump = findPlaylistObject(parts);
-      if (plDump) {
-        const t = nowIso();
-        for (const entry of playlistEntries(plDump)) {
-          try {
-            const m = mapVideoEntryToResource(entry, t);
-            await ctx.storage.putResource(m.resource);
-            const rid = `item_${randomUUID()}`;
-            next = addResourceToList(next, {
-              itemId: rid,
-              resourceId: m.resource.id,
-              now: nowIso(),
-            });
-          } catch {
-            // skip
-          }
-        }
-      }
-    } catch (e) {
-      return mapYtdlpToToolErr(e);
-    }
-  }
-  await ctx.storage.putList(next);
-  return { listId, playlistItemId: itemId, itemsAdded: includeItems };
-}
-
-export async function handleGetListContents(
-  ctx: ScriptizMcpContext,
-  raw: unknown,
-): Promise<ToolResult> {
-  const parsed = getListContentsInput.safeParse(raw);
-  if (!parsed.success) {
-    return toolErr("VALIDATION_ERROR", parsed.error.message, false);
-  }
-  const list = await ctx.storage.getListById(parsed.data.listId);
-  if (!list) {
-    return toolErr("NOT_FOUND", "List not found", false);
-  }
-  const itemDetails: Array<{
-    item: (typeof list.items)[0];
-    resource: Resource | null;
-  }> = [];
-  for (const item of list.items) {
-    const resource = await ctx.storage.getResourceById(item.resourceId);
-    itemDetails.push({ item, resource });
-  }
-  return { list, items: itemDetails };
-}
-
-export async function handleListLists(
-  ctx: ScriptizMcpContext,
-): Promise<ToolResult> {
-  const ids = await ctx.storage.listIds();
-  const lists: { id: string; name: string; updatedAt: string }[] = [];
-  for (const id of ids) {
-    const l = await ctx.storage.getListById(id);
-    if (l) {
-      lists.push({ id: l.id, name: l.name, updatedAt: l.updatedAt });
-    }
-  }
-  return { lists };
-}
-
 function mapYtdlpToToolErr(e: unknown): ToolErrorBody {
   if (e instanceof YtDlpError) {
     return toolErr(
@@ -835,27 +420,6 @@ export async function runScriptizTool(
       break;
     case "list_available_languages":
       r = await handleListAvailableLanguages(ctx, args);
-      break;
-    case "extract_playlist":
-      r = await handleExtractPlaylist(ctx, args);
-      break;
-    case "extract_channel_latest":
-      r = await handleExtractChannelLatest(ctx, args);
-      break;
-    case "create_list":
-      r = await handleCreateList(ctx, args);
-      break;
-    case "add_resource_to_list":
-      r = await handleAddResourceToList(ctx, args);
-      break;
-    case "add_playlist_to_list":
-      r = await handleAddPlaylistToList(ctx, args);
-      break;
-    case "get_list_contents":
-      r = await handleGetListContents(ctx, args);
-      break;
-    case "list_lists":
-      r = await handleListLists(ctx);
       break;
     default:
       r = toolErr("UNKNOWN_TOOL", `Unknown tool: ${name}`, false);

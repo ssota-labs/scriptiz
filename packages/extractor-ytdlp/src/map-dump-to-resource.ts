@@ -2,15 +2,105 @@ import { makeResourceId } from "@scriptiz/core";
 import type { Resource } from "@scriptiz/schemas";
 import { YtDlpError } from "./ytdlp-error.js";
 
-function pickThumb(o: Record<string, unknown>): string | undefined {
-  if (typeof o.thumbnail === "string" && o.thumbnail.length) {
-    return o.thumbnail;
+/**
+ * Video poster: yt-dlp exposes `thumbnail` (single, often lower-res) and `thumbnails[]`
+ * with multiple URLs (width/height/preference). Prefer the list for the best resolution.
+ * Channel art: `uploader_avatar_url` / `uploader_thumbnail` / `channel_thumbnail`, or avatar-like
+ * entries in `thumbnails[]` (see `pickOwnerThumbnailUrl`).
+ */
+function pickBestVideoThumbnail(o: Record<string, unknown>): string | undefined {
+  const direct =
+    typeof o.thumbnail === "string" && o.thumbnail.length > 0
+      ? o.thumbnail
+      : undefined;
+  const th = o.thumbnails;
+  if (!Array.isArray(th) || th.length === 0) {
+    return direct;
+  }
+
+  let bestUrl: string | undefined;
+  let bestScore = -1;
+
+  for (const item of th) {
+    if (typeof item !== "object" || item === null) {
+      continue;
+    }
+    const rec = item as Record<string, unknown>;
+    const url = rec.url;
+    if (typeof url !== "string" || !url.startsWith("http")) {
+      continue;
+    }
+    const w =
+      typeof rec.width === "number" && Number.isFinite(rec.width)
+        ? rec.width
+        : 0;
+    const h =
+      typeof rec.height === "number" && Number.isFinite(rec.height)
+        ? rec.height
+        : 0;
+    const pref =
+      typeof rec.preference === "number" && Number.isFinite(rec.preference)
+        ? rec.preference
+        : 0;
+    const idStr = typeof rec.id === "string" ? rec.id : "";
+
+    let area = w > 0 && h > 0 ? w * h : 0;
+    if (area === 0 && /maxresdefault|\/vi\/[^/]+\/maxres/i.test(url)) {
+      area = 1280 * 720;
+    }
+    if (idStr.includes("maxres") || /maxresdefault/i.test(url)) {
+      area = Math.max(area, 1280 * 720);
+    }
+
+    const score = area * 1000 + pref;
+    if (score > bestScore) {
+      bestScore = score;
+      bestUrl = url;
+    }
+  }
+
+  return bestUrl ?? direct;
+}
+
+function pickOwnerThumbnailUrl(o: Record<string, unknown>): string | undefined {
+  for (const key of [
+    "uploader_avatar_url",
+    "uploader_thumbnail",
+    "channel_thumbnail",
+  ] as const) {
+    const v = o[key];
+    if (typeof v === "string" && v.startsWith("http")) {
+      return v;
+    }
   }
   const th = o.thumbnails;
-  if (Array.isArray(th) && th.length) {
-    const last = th[th.length - 1] as Record<string, unknown> | string;
-    if (typeof last === "object" && last && "url" in last) {
-      return String(last.url);
+  if (!Array.isArray(th)) {
+    return undefined;
+  }
+  for (const item of th) {
+    if (typeof item !== "object" || item === null) {
+      continue;
+    }
+    const rec = item as Record<string, unknown>;
+    const id = rec.id;
+    const url = rec.url;
+    if (typeof url !== "string" || !url.startsWith("http")) {
+      continue;
+    }
+    if (typeof id === "string" && /avatar|channel|uploader/i.test(id)) {
+      return url;
+    }
+  }
+  for (const item of th) {
+    if (typeof item !== "object" || item === null) {
+      continue;
+    }
+    const url = (item as Record<string, unknown>).url;
+    if (
+      typeof url === "string" &&
+      (url.includes("yt3.ggpht.com") || url.includes("yt3.googleusercontent.com"))
+    ) {
+      return url;
     }
   }
   return undefined;
@@ -80,7 +170,8 @@ export function mapVideoDumpToResource(
     ownerName: uploader,
     ownerSourceId,
     durationSeconds: duration,
-    thumbnailUrl: pickThumb(o),
+    thumbnailUrl: pickBestVideoThumbnail(o),
+    ownerThumbnailUrl: pickOwnerThumbnailUrl(o),
     publishedAt,
     createdAt: nowIso,
     updatedAt: nowIso,
@@ -135,7 +226,8 @@ export function mapVideoEntryToResource(
     ownerName: uploader,
     ownerSourceId,
     durationSeconds: duration,
-    thumbnailUrl: pickThumb(o),
+    thumbnailUrl: pickBestVideoThumbnail(o),
+    ownerThumbnailUrl: pickOwnerThumbnailUrl(o),
     publishedAt: uploadDateToIso(pub) ?? undefined,
     createdAt: nowIso,
     updatedAt: nowIso,
